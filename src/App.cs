@@ -343,11 +343,13 @@ namespace Nibble
         // still wired, the charge is done.
 
         public bool ChargeEstimated, FullyCharged;
+        public bool ChargeFromLast;         // charging, showing the last real reading (no rate learned yet)
+        bool rateLearned;                   // a full charge has been measured
         public string PercentText { get { return (ChargeEstimated ? "~" : "") + Percent + "%"; } }
         int lastRealPercent = -1;           // last level read while not charging
         DateTime chargeStart = DateTime.MinValue;
         int chargeStartPercent = -1;
-        double chargeRate = 1.0;            // %/min; refined after each full charge
+        double chargeRate = 0.15;           // %/min placeholder; unused until a full charge is measured
 
         void SetBattery(int raw, bool charging)
         {
@@ -363,14 +365,17 @@ namespace Nibble
 
             if (placeholder)
             {
+                // Only estimate once a real charge rate has been measured; otherwise keep showing the last
+                // real reading (labelled as such) rather than a made-up number.
                 double minutes = (DateTime.Now - chargeStart).TotalMinutes;
-                Percent = (int)Math.Min(99, chargeStartPercent + chargeRate * minutes);
-                ChargeEstimated = true;
+                Percent = rateLearned ? (int)Math.Min(99, chargeStartPercent + chargeRate * minutes) : chargeStartPercent;
+                ChargeEstimated = rateLearned;
+                ChargeFromLast = !rateLearned;
             }
             else
             {
                 Percent = raw;
-                ChargeEstimated = false;
+                ChargeEstimated = ChargeFromLast = false;
                 if (!charging) lastRealPercent = raw;
             }
 
@@ -381,7 +386,9 @@ namespace Nibble
                 if (wasCharging && raw >= 100 && minutes >= 10 && chargeStartPercent < 90)
                 {
                     double measured = (100 - chargeStartPercent) / minutes;
-                    chargeRate = Math.Max(0.2, Math.Min(5, chargeRate * 0.5 + measured * 0.5));
+                    // First measurement replaces the placeholder rate outright; later ones are blended in.
+                    chargeRate = Math.Max(0.02, Math.Min(5, rateLearned ? chargeRate * 0.5 + measured * 0.5 : measured));
+                    rateLearned = true;
                     SaveSettings();
                 }
                 chargeStart = DateTime.MinValue;
@@ -414,7 +421,7 @@ namespace Nibble
             if (!Found) return "Receiver not found";
             if (!Online) return "Mouse asleep";
             if (FullyCharged) return "Fully charged";
-            if (Charging) return ChargeEstimated ? "Charging · estimated" : "Charging";
+            if (Charging) return ChargeEstimated ? "Charging · estimated" : ChargeFromLast ? "Charging · last reading" : "Charging";
             if (Percent <= 20) return "Low battery";
             return "On battery";
         }
@@ -488,7 +495,7 @@ namespace Nibble
                     if (v is int && (int)v >= 0 && (int)v <= 100) { Percent = lastRealPercent = (int)v; savedPercent = Percent; }
                     double rate;
                     if (double.TryParse(k.GetValue("ChargeRate") as string, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out rate) && rate > 0)
-                        chargeRate = rate;
+                    { chargeRate = rate; rateLearned = true; }
                 }
             }
             catch { }
@@ -513,7 +520,7 @@ namespace Nibble
                     k.SetValue("IntervalSec", IntervalSec, RegistryValueKind.DWord);
                     k.SetValue("LowAlert", LowAlert ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TrayStyle", TrayStyle, RegistryValueKind.DWord);
-                    k.SetValue("ChargeRate", chargeRate.ToString("R", System.Globalization.CultureInfo.InvariantCulture), RegistryValueKind.String);
+                    if (rateLearned) k.SetValue("ChargeRate", chargeRate.ToString("R", System.Globalization.CultureInfo.InvariantCulture), RegistryValueKind.String);
                     k.SetValue("Appearance", Appearance, RegistryValueKind.DWord);
                 }
             }
