@@ -361,6 +361,17 @@ namespace Nibble
                 if (!charging) lastRealPercent = raw;
             }
         }
+        // The alert texts live here so --test-notifications shows exactly what users get.
+        public static void LowAlertBalloon(NotifyIcon icon, int percent)
+        {
+            icon.ShowBalloonTip(6000, "Mouse battery low", string.Format("RK M3 is at {0}%. Plug it in soon.", percent), ToolTipIcon.Warning);
+        }
+
+        public static void FullAlertBalloon(NotifyIcon icon)
+        {
+            icon.ShowBalloonTip(5000, "Fully charged", "RK M3 is at 100%. You can unplug it.", ToolTipIcon.Info);
+        }
+
         void CheckAlerts()
         {
             if (!Online || Percent < 0) return;
@@ -370,13 +381,12 @@ namespace Nibble
             if (LowAlert && !Charging && Percent <= 20 && !lowWarned)
             {
                 lowWarned = true;
-                tray.ShowBalloonTip(6000, "Mouse battery low",
-                    string.Format("RK M3 is at {0}%. Plug it in soon.", Percent), ToolTipIcon.Warning);
+                LowAlertBalloon(tray, Percent);
             }
             if (LowAlert && FullyCharged && !fullWarned)
             {
                 fullWarned = true;
-                tray.ShowBalloonTip(5000, "Fully charged", "RK M3 is at 100%. You can unplug it.", ToolTipIcon.Info);
+                FullAlertBalloon(tray);
             }
         }
 

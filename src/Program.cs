@@ -15,6 +15,26 @@ namespace Nibble
     {
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
 
+        // Shows each real alert a few seconds apart from a temporary tray icon, then exits.
+        static void TestNotifications()
+        {
+            SetProcessDPIAware();
+            Application.EnableVisualStyles();
+            var icon = new NotifyIcon { Text = "Nibble (notification test)", Visible = true };
+            icon.Icon = IconArt.TrayIcon(0, SystemInformation.SmallIconSize.Width, 18, false, false, Theme.TaskbarLight());
+            var steps = new Action[]
+            {
+                delegate { TrayApp.LowAlertBalloon(icon, 18); },
+                delegate { TrayApp.FullAlertBalloon(icon); },
+                delegate { icon.Visible = false; icon.Dispose(); Application.ExitThread(); }
+            };
+            int i = 0;
+            var t = new System.Windows.Forms.Timer { Interval = 800 };
+            t.Tick += delegate { t.Interval = 7000; steps[i++](); if (i == steps.Length) t.Stop(); };
+            t.Start();
+            Application.Run();
+        }
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -40,6 +60,12 @@ namespace Nibble
                 TrayApp.SnapshotCharging = Array.IndexOf(args, "charging") >= 0;
                 int side; if (args.Length >= 5 && int.TryParse(args[4], out side)) SettingsWindow.SideStyle = side;
                 new TrayApp(args[1], args[2] == "dark", int.Parse(args[3]));
+                return;
+            }
+
+            if (args.Length >= 1 && args[0] == "--test-notifications")
+            {
+                TestNotifications();
                 return;
             }
 
