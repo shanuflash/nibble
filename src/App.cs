@@ -27,6 +27,9 @@ namespace Nibble
         // Settings
         public int IntervalSec = 60;
         public bool LowAlert = true;
+        public bool AlertsOverGames = true; // show (click-through) over borderless/fullscreen-optimised games
+
+        public void SetAlertsOverGames(bool on) { AlertsOverGames = on; SaveSettings(); Changed(); }
         public int TrayStyle;              // index into IconArt.TrayStyles
 
         public int Appearance;             // 0 = follow Windows, 1 = light, 2 = dark
@@ -362,14 +365,14 @@ namespace Nibble
             }
         }
         // The alert texts live here so --test-notifications shows exactly what users get.
-        public static void LowAlertBalloon(NotifyIcon icon, int percent)
+        public static void ShowLowAlert(int percent, Action onClick, bool overGames)
         {
-            icon.ShowBalloonTip(6000, "Mouse battery low", string.Format("RK M3 is at {0}%. Plug it in soon.", percent), ToolTipIcon.Warning);
+            Toast.Show(Toast.Kind.Low, "Mouse battery low", string.Format("RK M3 is at {0}%. Plug it in soon.", percent), onClick, overGames);
         }
 
-        public static void FullAlertBalloon(NotifyIcon icon)
+        public static void ShowFullAlert(Action onClick, bool overGames)
         {
-            icon.ShowBalloonTip(5000, "Fully charged", "RK M3 is at 100%. You can unplug it.", ToolTipIcon.Info);
+            Toast.Show(Toast.Kind.Full, "Fully charged", "RK M3 is at 100%. You can unplug it.", onClick, overGames);
         }
 
         void CheckAlerts()
@@ -381,12 +384,12 @@ namespace Nibble
             if (LowAlert && !Charging && Percent <= 20 && !lowWarned)
             {
                 lowWarned = true;
-                LowAlertBalloon(tray, Percent);
+                ShowLowAlert(Percent, fly.ShowFlyout, AlertsOverGames);
             }
             if (LowAlert && FullyCharged && !fullWarned)
             {
                 fullWarned = true;
-                FullAlertBalloon(tray);
+                ShowFullAlert(fly.ShowFlyout, AlertsOverGames);
             }
         }
 
@@ -462,6 +465,8 @@ namespace Nibble
                     if (v is int && (int)v >= 10) IntervalSec = (int)v;
                     v = k.GetValue("LowAlert");
                     if (v is int) LowAlert = (int)v != 0;
+                    v = k.GetValue("AlertsOverGames");
+                    if (v is int) AlertsOverGames = (int)v != 0;
                     v = k.GetValue("TrayStyle");
                     if (v is int && (int)v >= 0 && (int)v < IconArt.TrayStyles.Length) TrayStyle = (int)v;
                     v = k.GetValue("Appearance");
@@ -493,6 +498,7 @@ namespace Nibble
                     k.SetValue("IntervalSec", IntervalSec, RegistryValueKind.DWord);
                     k.SetValue("LowAlert", LowAlert ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TrayStyle", TrayStyle, RegistryValueKind.DWord);
+                    k.SetValue("AlertsOverGames", AlertsOverGames ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("Appearance", Appearance, RegistryValueKind.DWord);
                 }
             }

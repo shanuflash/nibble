@@ -38,7 +38,7 @@ namespace Nibble
             finally { SetWindowDisplayAffinity(hwnd, WDA_NONE); }
         }
 
-        // Frosted backdrop: downscale 8x, box-blur, upscale smoothly, boost saturation, then tint.
+        // Frosted backdrop: downscale (up to 8x), box-blur, upscale smoothly, boost saturation, then tint.
         public static Bitmap Frost(Bitmap source, Size size, Color tint, Color fallback, float saturation)
         {
             var result = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
@@ -50,7 +50,9 @@ namespace Nibble
                 }
                 else
                 {
-                    int sw = Math.Max(4, size.Width / 8), sh = Math.Max(4, size.Height / 8);
+                    // Downscale less for small panels (a short toast would otherwise blur into one flat colour).
+                    int factor = Math.Max(2, Math.Min(8, Math.Min(size.Width, size.Height) / 24));
+                    int sw = Math.Max(4, size.Width / factor), sh = Math.Max(4, size.Height / factor);
                     using (var small = new Bitmap(sw, sh, PixelFormat.Format32bppArgb))
                     {
                         using (var sg = Graphics.FromImage(small))
@@ -59,7 +61,7 @@ namespace Nibble
                             sg.PixelOffsetMode = PixelOffsetMode.HighQuality;
                             sg.DrawImage(source, new Rectangle(0, 0, sw, sh));
                         }
-                        BoxBlur(small, 2, 3);
+                        BoxBlur(small, Math.Max(2, 16 / factor), 3);   // same effective blur at any scale
                         g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                         using (var ia = new ImageAttributes())

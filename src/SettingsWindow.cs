@@ -781,6 +781,14 @@ namespace Nibble
             }
             y = sp.Bottom + F(14);
 
+            // Alerts
+            var ap = new RectangleF(c.X, y, c.Width, rh * 2);
+            Platter(g, ap);
+            RowLabel(g, ap, 0, rh, "Battery alerts", "Notify at 20% and when fully charged");
+            Switch(g, SwitchRect(ap, 0, rh), app.LowAlert, "alerts", delegate { app.SetLowAlert(!app.LowAlert); });
+            Sep(g, ap, rh);
+            RowLabel(g, ap, 1, rh, "Show alerts over games", "Click-through, so aim and clicks still reach the game");
+            Switch(g, SwitchRect(ap, 1, rh), app.AlertsOverGames, "overgames", delegate { app.SetAlertsOverGames(!app.AlertsOverGames); });
         }
 
         void PaintNibble(Graphics g, RectangleF c)
@@ -817,10 +825,10 @@ namespace Nibble
             }
             y = gp.Bottom + F(14);
 
-            var p = new RectangleF(c.X, y, c.Width, rh * 5);
+            var p = new RectangleF(c.X, y, c.Width, rh * 4);
             Platter(g, p);
-            PaintUpdateRow(g, p, 4, rh);
-            Sep(g, p, rh * 4);
+            PaintUpdateRow(g, p, 3, rh);
+            Sep(g, p, rh * 3);
             RowLabel(g, p, 0, rh, "Appearance", "Nibble’s panels and this window");
             Segmented(g, new RectangleF(p.Right - F(14) - F(270), p.Y + (rh - F(32)) / 2, F(270), F(32)), new[] { "System", "Light", "Dark" },
                 app.Appearance, "appearance", delegate (int i) { app.SetAppearance(i); });
@@ -832,9 +840,6 @@ namespace Nibble
             int[] iv = { 30, 60, 300, 900 };
             Segmented(g, new RectangleF(p.Right - F(14) - F(240), p.Y + rh * 2 + (rh - F(32)) / 2, F(240), F(32)), new[] { "30s", "1m", "5m", "15m" },
                 Array.IndexOf(iv, app.IntervalSec), "interval", delegate (int i) { app.SetInterval(iv[i]); });
-            Sep(g, p, rh * 3);
-            RowLabel(g, p, 3, rh, "Battery alerts", "Notify at 20% and when fully charged");
-            Switch(g, SwitchRect(p, 3, rh), app.LowAlert, "alerts", delegate { app.SetLowAlert(!app.LowAlert); });
         }
 
         void PaintDevice(Graphics g, RectangleF c)
