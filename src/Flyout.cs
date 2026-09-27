@@ -125,12 +125,9 @@ namespace Nibble
         public void ShowFlyout()
         {
             th = Theme.Current();
-            var scr = Screen.FromPoint(Cursor.Position);
-            Rectangle wa = scr.WorkingArea, b = scr.Bounds;
-            int gap = Px(12), pw = Px(PW), ph = Px(PH), m = Px(M);
-            int px = wa.Right - pw - gap, py = wa.Bottom - ph - gap;
-            if (wa.Top > b.Top) py = wa.Top + gap;
-            else if (wa.Left > b.Left) px = wa.Left + gap;
+            int pw = Px(PW), ph = Px(PH), m = Px(M);
+            var corner = Layered.Corner(Screen.FromPoint(Cursor.Position), new Size(pw, ph), Px(12));
+            int px = corner.X, py = corner.Y;
             winX = px - m; winY = py - m;
 
             using (var cap = Glass.Capture(new Rectangle(px, py, pw, ph)))

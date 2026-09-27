@@ -14,7 +14,7 @@ namespace Nibble
         [DllImport("shell32.dll")] static extern int SHQueryUserNotificationState(out int state);
         const int QUNS_BUSY = 2, QUNS_RUNNING_D3D_FULL_SCREEN = 3, QUNS_PRESENTATION_MODE = 4;
 
-        const float TW = 356, TH = 76, TR = 22, M = 2;
+        const float TW = 340, TH = 76, TR = 22, M = 2;   // same width as the flyout
 
         public enum Kind { Low, Full }
 
@@ -115,10 +115,9 @@ namespace Nibble
         {
             if (current != null) current.Dismiss();
             current = this;
-            var wa = Screen.PrimaryScreen.WorkingArea;
-            int gap = Px(12);
-            restX = wa.Right - Px(TW) - gap - Px(M);
-            winY = wa.Bottom - Px(TH) - gap - Px(M);
+            var corner = Layered.Corner(Screen.PrimaryScreen, new Size(Px(TW), Px(TH)), Px(12));
+            restX = corner.X - Px(M);
+            winY = corner.Y - Px(M);
             using (var cap = Glass.Capture(new Rectangle(restX + Px(M), winY + Px(M), Px(TW), Px(TH))))
                 backdrop = Glass.Frost(cap, new Size(Px(TW), Px(TH)), Glass.AdaptiveTint(cap, th.Tint, th.Dark, 90, 175), th.Fallback, 1.8f);
             bgAvg = Glass.Average(backdrop);

@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace Nibble
 {
-    // On-screen DPI indicator: a glass pill at the bottom centre, like the system volume display.
+    // On-screen DPI indicator: a glass pill in the tray corner, where the flyout and notifications appear.
     // Click-through and never focused, so it's safe mid-game. Pressing again updates it in place.
     class DpiHud : Form
     {
@@ -78,9 +78,10 @@ namespace Nibble
             if (!Visible || closing)
             {
                 th = Theme.Current();
-                var wa = Screen.PrimaryScreen.WorkingArea;
-                winX = wa.X + (wa.Width - Size.Width) / 2;
-                winY = wa.Bottom - Size.Height - Px(56);
+                // Same corner as the flyout and notifications.
+                var corner = Layered.Corner(Screen.PrimaryScreen, new Size(Px(HW), Px(HH)), Px(12));
+                winX = corner.X - Px(M);
+                winY = corner.Y - Px(M);
                 using (var cap = Glass.Capture(new Rectangle(winX + Px(M), winY + Px(M), Px(HW), Px(HH))))
                 {
                     if (backdrop != null) backdrop.Dispose();
@@ -94,7 +95,7 @@ namespace Nibble
                 }
                 closing = false;
                 t = 0; t0 = now;
-                Location = new Point(winX, winY);
+                Location = new Point(winX + Px(40), winY);
                 Render();
                 Show();
             }
@@ -131,8 +132,8 @@ namespace Nibble
             if (frame == null || backdrop == null || !IsHandleCreated) return;
             using (var g = Graphics.FromImage(frame.Bmp)) Compose(g);
             frame.ApplyMask();
-            // Rises a few pixels as it fades in.
-            Layered.Push(Handle, frame, winX, winY + (int)Math.Round((1 - t) * F(8)), (byte)(255 * Math.Max(0, Math.Min(1, t))));
+            // Slides in from the right, like the notifications.
+            Layered.Push(Handle, frame, winX + (int)Math.Round((1 - t) * F(40)), winY, (byte)(255 * Math.Max(0, Math.Min(1, t))));
         }
 
         void Compose(Graphics g)

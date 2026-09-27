@@ -10,6 +10,17 @@ namespace Nibble
     // Presents a Surface on a WS_EX_LAYERED window with per-pixel alpha.
     static class Layered
     {
+        // Shared anchor for every popup (flyout, notifications, DPI popup): the corner next to the tray,
+        // `gap` px in from the screen edge and the taskbar. Returns the panel's top-left in screen px.
+        public static Point Corner(System.Windows.Forms.Screen screen, Size panel, int gap)
+        {
+            Rectangle wa = screen.WorkingArea, b = screen.Bounds;
+            int x = wa.Right - panel.Width - gap, y = wa.Bottom - panel.Height - gap;
+            if (wa.Top > b.Top) y = wa.Top + gap;           // taskbar on top
+            else if (wa.Left > b.Left) x = wa.Left + gap;   // taskbar on the left
+            return new Point(x, y);
+        }
+
         [StructLayout(LayoutKind.Sequential)] struct PT { public int X, Y; }
         [StructLayout(LayoutKind.Sequential)] struct SZ { public int W, H; }
         [StructLayout(LayoutKind.Sequential, Pack = 1)] struct BLEND { public byte Op, Flags, Alpha, Format; }
