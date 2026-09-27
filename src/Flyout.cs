@@ -71,9 +71,9 @@ namespace Nibble
             using (var g = CreateGraphics()) S = g.DpiX / 96f;
             Size = new Size(Px(PW + 2 * M), Px(PH + 2 * M));
 
-            var disp = Fonts.Family(Fonts.Display, "Segoe UI Variable Display Semib", "Segoe UI Semibold");
-            var text = Fonts.Family(Fonts.Text, "Segoe UI Variable Text", "Segoe UI");
-            var textSb = Fonts.Family(Fonts.TextSemibold, "Segoe UI Variable Text Semibold", "Segoe UI Semibold");
+            string disp = Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold");
+            string text = Draw.PickFont("Segoe UI Variable Text", "Segoe UI");
+            string textSb = Draw.PickFont("Segoe UI Variable Text Semibold", "Segoe UI Semibold");
             fNum = PxFont(disp, 60); fPct = PxFont(disp, 26); fTitle = PxFont(disp, 18);
             fName = PxFont(textSb, 15); fTileVal = PxFont(textSb, 15); fSeg = PxFont(textSb, 13); fBtn = PxFont(textSb, 15);
             fSub = PxFont(text, 13); fTileCap = PxFont(text, 12); fRow = PxFont(text, 15);
@@ -101,7 +101,7 @@ namespace Nibble
             return f;
         }
 
-        Font PxFont(FontFamily family, float px) { return new Font(family, px * S, FontStyle.Regular, GraphicsUnit.Pixel); }
+        Font PxFont(string family, float px) { return new Font(family, px * S, FontStyle.Regular, GraphicsUnit.Pixel); }
         int Px(float v) { return (int)Math.Round(v * S); }
         float F(float v) { return v * S; }
 
@@ -483,10 +483,25 @@ namespace Nibble
 
         void Txt(Graphics g, string s, Font f, Color c, RectangleF r, StringFormat sf)
         {
-            TextStyle.Draw(g, s, f, A(c), r, sf);
+            // GDI text for native ClearType. It ignores GDI+ transforms, so apply the view offset by hand,
+            // and flush pending GDI+ drawing first so text lands on top of it.
+            g.Flush(FlushIntention.Sync);
+            int align = sf == sfC ? 1 : (sf == sfR ? 2 : 0);
+            var rr = Rectangle.Round(new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height));
+            frame.Text(s, f, Flat(c), rr, align);
         }
 
-        SizeF Measure(string s, Font f) { return TextStyle.Measure(s, f); }
+        // Opaque equivalent of a translucent color over the frosted backdrop, including view fade.
+        Color Flat(Color c)
+        {
+            float k = c.A / 255f * va;
+            return Color.FromArgb(255,
+                (int)(bgAvg.R + (c.R - bgAvg.R) * k),
+                (int)(bgAvg.G + (c.G - bgAvg.G) * k),
+                (int)(bgAvg.B + (c.B - bgAvg.B) * k));
+        }
+
+        SizeF Measure(string s, Font f) { return frame.Measure(s, f); }
 
         float Ascent(Font f) { return f.Size * f.FontFamily.GetCellAscent(f.Style) / f.FontFamily.GetEmHeight(f.Style); }
         float LineH(Font f) { return f.Size * (f.FontFamily.GetCellAscent(f.Style) + f.FontFamily.GetCellDescent(f.Style)) / f.FontFamily.GetEmHeight(f.Style); }

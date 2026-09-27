@@ -60,7 +60,6 @@ namespace Nibble
         [DllImport("gdi32.dll")] static extern IntPtr CreateDIBSection(IntPtr dc, ref BITMAPINFOHEADER bi, int usage, out IntPtr bits, IntPtr section, int offset);
         [DllImport("gdi32.dll")] static extern int SetBkMode(IntPtr dc, int mode);
         [DllImport("gdi32.dll")] static extern int SetTextColor(IntPtr dc, int color);
-        [DllImport("gdi32.dll")] static extern int SetTextCharacterExtra(IntPtr dc, int extra);
         [DllImport("gdi32.dll", CharSet = CharSet.Unicode)] static extern bool GetTextExtentPoint32W(IntPtr dc, string s, int n, out SIZE size);
         [DllImport("gdi32.dll", CharSet = CharSet.Unicode)] static extern IntPtr CreateFontIndirectW(LOGFONT lf);
 
@@ -128,7 +127,6 @@ namespace Nibble
         public void Text(string s, Font f, Color c, Rectangle r, int align)
         {
             SelectObject(Dc, HFont(f));
-            SetTextCharacterExtra(Dc, Tracking(f));
             SetTextColor(Dc, c.R | (c.G << 8) | (c.B << 16));
             var rc = new RECT { Left = r.Left, Top = r.Top, Right = r.Right, Bottom = r.Bottom };
             int flags = DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_NOCLIP;
@@ -139,16 +137,9 @@ namespace Nibble
         public SizeF Measure(string s, Font f)
         {
             SelectObject(Dc, HFont(f));
-            SetTextCharacterExtra(Dc, Tracking(f));
             SIZE sz;
             GetTextExtentPoint32W(Dc, s, s.Length, out sz);
             return new SizeF(sz.cx, sz.cy);
-        }
-
-        // Display sizes get slightly tighter letter-spacing, as Apple does with SF Display.
-        public static int Tracking(Font f)
-        {
-            return f.Size >= 22 ? -(int)Math.Round(f.Size * 0.025f) : 0;
         }
 
         static IntPtr HFont(Font f)
@@ -157,8 +148,7 @@ namespace Nibble
             if (fonts.TryGetValue(f, out h)) return h;
             var lf = new LOGFONT();
             f.ToLogFont(lf);
-            // Greyscale AA rather than ClearType: fuller, smoother glyphs, closer to how macOS renders type.
-            lf.lfQuality = 4; // ANTIALIASED_QUALITY
+            lf.lfQuality = 5; // CLEARTYPE_QUALITY
             h = CreateFontIndirectW(lf);
             fonts[f] = h;
             return h;

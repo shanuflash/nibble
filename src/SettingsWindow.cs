@@ -12,7 +12,7 @@ namespace Nibble
     class SettingsWindow : Form
     {
         const float CW = 980, CH = 640, CR = 30, SideW = 236, M = 2;
-        static readonly string[] Pages = { "DPI", "Performance", "Power", "Nibble", "Device" };
+        static readonly string[] Pages = { "DPI", "Performance", "Power", "General", "Device" };
         static readonly int[] Presets = { 400, 800, 1200, 1600, 2400, 3200, 6400 };
         static readonly int[] Swatches = { 0xFF0000, 0xFF8000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0xFFFFFF };   // what the LED can show
         static readonly string[] SleepNames = { "Never", "30 s", "1 min", "2 min", "3 min", "5 min", "10 min", "15 min", "30 min", "60 min" };
@@ -63,9 +63,9 @@ namespace Nibble
             var wa = Screen.PrimaryScreen.Bounds;
             U = Math.Min(dpi, Math.Min(wa.Width * 0.94f / CW, wa.Height * 0.9f / CH));
 
-            var disp = Fonts.Family(Fonts.Display, "Segoe UI Variable Display Semib", "Segoe UI Semibold");
-            var text = Fonts.Family(Fonts.Text, "Segoe UI Variable Text", "Segoe UI");
-            var textSb = Fonts.Family(Fonts.TextSemibold, "Segoe UI Variable Text Semibold", "Segoe UI Semibold");
+            string disp = Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold");
+            string text = Draw.PickFont("Segoe UI Variable Text", "Segoe UI");
+            string textSb = Draw.PickFont("Segoe UI Variable Text Semibold", "Segoe UI Semibold");
             fTitle = Px(disp, 30); fHuge = Px(disp, 44); fBig = Px(disp, 26); fHead = Px(textSb, 17);
             fRow = Px(text, 15); fSub = Px(text, 12.5f); fCap = Px(text, 11.5f); fSemi = Px(textSb, 14); fSmallSemi = Px(textSb, 12.5f); fNav = Px(text, 14);
 
@@ -76,7 +76,7 @@ namespace Nibble
             app.StateChanged += OnState;
         }
 
-        Font Px(FontFamily f, float px) { return new Font(f, px * U, FontStyle.Regular, GraphicsUnit.Pixel); }
+        Font Px(string f, float px) { return new Font(f, px * U, FontStyle.Regular, GraphicsUnit.Pixel); }
         float F(float v) { return v * U; }
         int Pi(float v) { return (int)Math.Round(v * U); }
 
@@ -313,7 +313,7 @@ namespace Nibble
                     g.DrawArc(p, rr, -90, 3.6f * app.Percent);
                 }
             int ms = (int)Math.Round(box.Width * 0.5f);
-            using (var m = Glyphs.Compose(ms, Glyphs.Coverage(Glyphs.Mouse.ToString(), Glyphs.IconFace, ms, ms, 400, 0), app.Online ? th.Label : th.Secondary))
+            using (var m = Glyphs.Compose(ms, Glyphs.CenteredCoverage(Glyphs.Mouse.ToString(), Glyphs.IconFace, ms, ms, 400), app.Online ? th.Label : th.Secondary))
                 g.DrawImageUnscaled(m, (int)(box.X + (box.Width - ms) / 2), (int)(box.Y + (box.Height - ms) / 2));
             string sub = !app.Found ? "Receiver not found"
                 : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
@@ -449,11 +449,11 @@ namespace Nibble
 
         void PageIcon(Graphics g, int i, RectangleF box, Color c)
         {
-            int s = (int)Math.Round(box.Width), px = (int)Math.Round(box.Width * 0.62f);
+            int s = (int)Math.Round(box.Width);
             string key = i + ":" + s + ":" + c.ToArgb();
             Bitmap bmp;
             if (!iconCache.TryGetValue(key, out bmp))
-                iconCache[key] = bmp = Glyphs.Compose(s, Glyphs.Coverage(PageGlyphs[i].ToString(), Glyphs.IconFace, s, px, 400, 0), c);
+                iconCache[key] = bmp = Glyphs.Compose(s, Glyphs.FittedCoverage(PageGlyphs[i].ToString(), Glyphs.IconFace, s, (int)Math.Round(s * 0.6f), 400), c);
             g.DrawImageUnscaled(bmp, (int)Math.Round(box.X), (int)Math.Round(box.Y));
         }
         Color PageTint(int i)
@@ -754,7 +754,7 @@ namespace Nibble
 
         void PaintNibble(Graphics g, RectangleF c)
         {
-            float y = Header(g, c, "Nibble", "How the app looks and behaves.");
+            float y = Header(g, c, "General", "How Nibble looks and behaves.");
             float rh = F(58);
 
             // Tray icon gallery: live previews of each style at the current level.
@@ -927,8 +927,8 @@ namespace Nibble
                 Button(g, new RectangleF(p.Right - F(18) - F(150), cy - F(15), F(150), F(30)), "Updater " + latest, th.Label, id, delegate { app.OpenUrl(url); });
         }
 
-        // Same metrics (incl. tracking) as the GDI text renderer.
-        Size MeasureT(string s, Font f) { return Size.Ceiling(TextStyle.Measure(s, f)); }
+        // Same metrics as the GDI text renderer.
+        Size MeasureT(string s, Font f) { return frame != null ? Size.Round(frame.Measure(s, f)) : TextRenderer.MeasureText(s, f, Size.Empty, TextFormatFlags.NoPadding); }
 
         void Button(Graphics g, RectangleF r, string label, Color fg, string id, Action a) { Button(g, r, label, fg, id, a, Color.Empty); }
 
@@ -1057,10 +1057,14 @@ namespace Nibble
             hits.Add(new Hit { Id = id, R = new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height), Do = a });
         }
 
-        // `under` is unused now that text is drawn with real alpha; kept so call sites read the same.
+        // GDI text straight into the DIB for native ClearType; translucent colours are pre-blended
+        // onto the surface below. GDI ignores GDI+ transforms, so the card offset is applied by hand.
         void Txt(Graphics g, string s, Font f, Color c, Color under, RectangleF r, int align)
         {
-            TextStyle.Draw(g, s, f, Av(c), r, align == 1 ? TextStyle.Center : align == 2 ? TextStyle.Right : TextStyle.Left);
+            float k = c.A / 255f * va;
+            var col = Color.FromArgb(255, (int)(under.R + (c.R - under.R) * k), (int)(under.G + (c.G - under.G) * k), (int)(under.B + (c.B - under.B) * k));
+            g.Flush(FlushIntention.Sync);
+            frame.Text(s, f, col, Rectangle.Round(new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height)), align);
         }
 
         // ---------- input ----------

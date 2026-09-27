@@ -7,11 +7,9 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse. It shows battery at a
 - **Settings window.** DPI stages (value, active stage, LED colour), polling rate (125 Hz–8 kHz), sensor mode, Motion Sync, ripple control, angle snapping, glass mode, lift-off distance, debounce, and sleep timer. Everything is read from and written to the mouse directly.
 - **Firmware check.** Compares the receiver/mouse firmware with RK's published versions and links to RK's official updater. Nibble never flashes firmware itself.
 - **Alerts.** Notifies you at 20% and when the mouse is fully charged.
-- **Lightweight.** One ~0.7 MB exe with no dependencies (it uses the .NET Framework that ships with Windows). It sits at about 2 MB working set while idle and does no work between checks.
+- **Lightweight.** One ~130 KB exe with no dependencies (it uses the .NET Framework that ships with Windows). It sits at about 2 MB working set while idle and does no work between checks.
 
 > Not affiliated with Royal Kludge. "RK" and "Royal Kludge" are their trademarks.
-
-UI type is [Inter](https://rsms.me/inter/) by Rasmus Andersson, embedded under the SIL Open Font License (`fonts/OFL.txt`).
 
 ## Build
 
