@@ -443,17 +443,37 @@ namespace Nibble
             }
         }
 
-        // Page icons are Segoe Fluent glyphs (same set as the tray), cached per size and colour.
-        static readonly char[] PageGlyphs = { '\uEC4A', '\uE945', '\uEBA7', '\uE9E9', '\uE962' };
         readonly Dictionary<string, Bitmap> iconCache = new Dictionary<string, Bitmap>();
 
+        // Page icons: custom symbols on a 24-unit grid (bold 2-unit strokes, filled where it reads better).
+        // Each is one path, scaled to the same ink size and centred on its true geometric bounds.
         void PageIcon(Graphics g, int i, RectangleF box, Color c)
         {
             int s = (int)Math.Round(box.Width);
             string key = i + ":" + s + ":" + c.ToArgb();
             Bitmap bmp;
             if (!iconCache.TryGetValue(key, out bmp))
-                iconCache[key] = bmp = Glyphs.Compose(s, Glyphs.FittedCoverage(PageGlyphs[i].ToString(), Glyphs.IconFace, s, (int)Math.Round(s * 0.6f), 400), c);
+            {
+                bmp = new Bitmap(s, s, PixelFormat.Format32bppPArgb);
+                using (var bg = Graphics.FromImage(bmp))
+                using (var brush = new SolidBrush(c))
+                {
+                    bg.SmoothingMode = SmoothingMode.AntiAlias;
+                    bg.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    var parts = Icons.Parts(i);
+                    var b = parts[0].GetBounds();
+                    foreach (var part in parts) b = RectangleF.Union(b, part.GetBounds());
+                    float ink = s * 0.64f, k = ink / Math.Max(b.Width, b.Height);
+                    using (var m = new Matrix())
+                    {
+                        m.Translate(s / 2f, s / 2f);
+                        m.Scale(k, k);
+                        m.Translate(-(b.X + b.Width / 2), -(b.Y + b.Height / 2));
+                        foreach (var part in parts) { part.Transform(m); bg.FillPath(brush, part); part.Dispose(); }
+                    }
+                }
+                iconCache[key] = bmp;
+            }
             g.DrawImageUnscaled(bmp, (int)Math.Round(box.X), (int)Math.Round(box.Y));
         }
         Color PageTint(int i)

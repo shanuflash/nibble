@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to stamp into the exe, e.g. 1.1.0"
+        description: "Version to stamp into the exe, e.g. 0.2.0"
         required: true
-        default: "1.0.0"
+        default: "0.1.0"
       release:
         description: "Also publish a GitHub Release (tag v<version>) with the exe attached"
         type: boolean
