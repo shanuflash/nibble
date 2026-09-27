@@ -70,14 +70,15 @@ namespace Nibble
             int minX = big, minY = big, maxX = -1, maxY = -1;
             for (int y = 0; y < big; y++)
                 for (int x = 0; x < big; x++)
-                    if (cov[y * big + x] > 24)
+                    if (cov[y * big + x] > 127)   // the visible edge: half coverage, not faint AA fringe
                     {
                         if (x < minX) minX = x; if (x > maxX) maxX = x;
                         if (y < minY) minY = y; if (y > maxY) maxY = y;
                     }
             var outp = new byte[s * s];
             if (maxX < 0) return outp;
-            int dx = (s - (maxX - minX + 1)) / 2 - minX, dy = (s - (maxY - minY + 1)) / 2 - minY;
+            int dx = (int)Math.Round((s - (maxX - minX + 1)) / 2.0 - minX, MidpointRounding.AwayFromZero);
+            int dy = (int)Math.Round((s - (maxY - minY + 1)) / 2.0 - minY, MidpointRounding.AwayFromZero);
             for (int y = 0; y < big; y++)
                 for (int x = 0; x < big; x++)
                 {

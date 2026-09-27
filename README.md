@@ -17,7 +17,11 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse. It shows battery at a
 build.cmd
 ```
 
-The output goes to `bin\Nibble.exe`. There's no installer; turn on **Launch at login** in Settings → Nibble.
+The output goes to `bin\Nibble.exe`. There's no installer; turn on **Launch at login** in Settings → General.
+
+### Releases
+
+Go to **Actions → Build → Run workflow**, enter a version, and tick **release** to publish it as a GitHub Release with the exe attached. The workflow only ever runs manually. Nibble's own update check (Settings → General) reads the latest release.
 
 Dev flags:
 

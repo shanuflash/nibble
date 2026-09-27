@@ -1,0 +1,41 @@
+name: Build
+
+# Manual only: run it from the Actions tab. Nothing triggers on push or pull requests.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stamp into the exe, e.g. 1.1.0"
+        required: true
+        default: "1.0.0"
+      release:
+        description: "Also publish a GitHub Release (tag v<version>) with the exe attached"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        shell: cmd
+        env:
+          NIBBLE_VERSION: ${{ inputs.version }}
+        run: build.cmd
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nibble-${{ inputs.version }}
+          path: bin/Nibble.exe
+
+      - name: Publish release
+        if: ${{ inputs.release }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ inputs.version }}" bin/Nibble.exe --title "Nibble ${{ inputs.version }}" --generate-notes
