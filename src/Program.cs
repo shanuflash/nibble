@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -14,6 +15,25 @@ namespace Nibble
     static class Program
     {
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+
+        // Cycles the DPI popup through three stages, like pressing the DPI button, then exits.
+        static void TestDpiHud()
+        {
+            SetProcessDPIAware();
+            Application.EnableVisualStyles();
+            int[] dpis = { 800, 1600, 3200 };
+            Color[] leds = { Theme.Hex(0xFF0000), Theme.Hex(0x00FF00), Theme.Hex(0x00FFFF) };
+            int i = 0;
+            var t = new System.Windows.Forms.Timer { Interval = 400 };
+            t.Tick += delegate
+            {
+                t.Interval = 900;
+                if (i < 3) { DpiHud.Show(dpis[i], i + 1, 3, leds[i]); i++; }
+                else if (i++ > 6) { t.Stop(); Application.ExitThread(); }
+            };
+            t.Start();
+            Application.Run();
+        }
 
         // Shows each real alert a few seconds apart, then exits.
         static void TestNotifications()
@@ -58,6 +78,12 @@ namespace Nibble
                 TrayApp.SnapshotCharging = Array.IndexOf(args, "charging") >= 0;
                 int side; if (args.Length >= 5 && int.TryParse(args[4], out side)) SettingsWindow.SideStyle = side;
                 new TrayApp(args[1], args[2] == "dark", int.Parse(args[3]));
+                return;
+            }
+
+            if (args.Length >= 1 && args[0] == "--test-dpi-hud")
+            {
+                TestDpiHud();
                 return;
             }
 

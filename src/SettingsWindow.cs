@@ -609,8 +609,14 @@ namespace Nibble
 
             // Editor for the active stage
             int s = cfg.Stage, v = dragging ? dragValue : cfg.Dpi(s);
-            var ed = new RectangleF(c.X, y, c.Width, F(246));
+            var ed = new RectangleF(c.X, y, c.Width, F(236));
             Platter(g, ed);
+
+            // On-screen popup toggle, below the editor.
+            var hp = new RectangleF(c.X, ed.Bottom + F(12), c.Width, F(52));
+            Platter(g, hp);
+            RowLabel(g, hp, 0, F(52), "On-screen popup", "Show the new DPI when you press the mouse’s DPI button");
+            Switch(g, SwitchRect(hp, 0, F(52)), app.ShowDpiHud, "dpihud", delegate { app.SetShowDpiHud(!app.ShowDpiHud); });
             var pf = PlatterFlat();
             Txt(g, "Stage " + s, fHead, th.Label, pf, new RectangleF(ed.X + F(20), ed.Y + F(16), F(200), F(24)), 0);
             Txt(g, "Drag, pick a preset, or nudge by 50.", fSub, th.Secondary, pf, new RectangleF(ed.X + F(20), ed.Y + F(40), F(300), F(18)), 0);

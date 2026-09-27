@@ -28,6 +28,23 @@ namespace Nibble
         public int IntervalSec = 60;
         public bool LowAlert = true;
         public bool AlertsOverGames = true; // show (click-through) over borderless/fullscreen-optimised games
+        public bool ShowDpiHud = true;      // on-screen popup when the DPI button changes stage
+
+        public void SetShowDpiHud(bool on) { ShowDpiHud = on; SaveSettings(); Changed(); }
+
+        // Popup only for changes made on the mouse (its DPI button), not for edits from Settings.
+        int hudStage = -1, hudDpi = -1;
+        bool dpiButtonPressed;
+
+        void TrackDpi(bool fromMouse)
+        {
+            if (Config == null) return;
+            int s = Config.Stage, d = Config.CurrentDpi;
+            bool changed = hudStage > 0 && (s != hudStage || d != hudDpi);
+            if (fromMouse && ShowDpiHud && (changed || dpiButtonPressed))
+                DpiHud.Show(d, s, Config.Stages, Config.StageColor(s));
+            hudStage = s; hudDpi = d; dpiButtonPressed = false;
+        }
 
         public void SetAlertsOverGames(bool on) { AlertsOverGames = on; SaveSettings(); Changed(); }
         public int TrayStyle;              // index into IconArt.TrayStyles
@@ -158,6 +175,7 @@ namespace Nibble
                     Saving = false;
                     SaveFailed = !ok || fresh == null;
                     if (fresh != null) Config = fresh;
+                    TrackDpi(false);
                     SavedAt = DateTime.Now;
                     AfterStateUpdate();
                 }, null);
@@ -253,7 +271,7 @@ namespace Nibble
             {
                 Wired = r.Wired;
                 SetBattery(r.Percent, r.Charging);
-                if (r.Config != null && !Saving) Config = r.Config;   // don't clobber an edit in flight
+                if (r.Config != null && !Saving) { Config = r.Config; TrackDpi(true); }   // don't clobber an edit in flight
                 Updated = DateTime.Now;
             }
             if (!Found) { Online = false; }
@@ -300,7 +318,9 @@ namespace Nibble
                     Updated = DateTime.Now;
                     break;
                 case RkM3.EvtDpi:
-                    // Stage switched with the DPI button; re-read the table for the new active stage.
+                    // Stage switched with the DPI button; re-read the table for the new active stage and
+                    // show the popup once it's in.
+                    dpiButtonPressed = true;
                     After(150, RefreshNow);
                     break;
                 case RkM3.EvtConnect:
@@ -465,6 +485,8 @@ namespace Nibble
                     if (v is int && (int)v >= 10) IntervalSec = (int)v;
                     v = k.GetValue("LowAlert");
                     if (v is int) LowAlert = (int)v != 0;
+                    v = k.GetValue("ShowDpiHud");
+                    if (v is int) ShowDpiHud = (int)v != 0;
                     v = k.GetValue("AlertsOverGames");
                     if (v is int) AlertsOverGames = (int)v != 0;
                     v = k.GetValue("TrayStyle");
@@ -499,6 +521,7 @@ namespace Nibble
                     k.SetValue("LowAlert", LowAlert ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TrayStyle", TrayStyle, RegistryValueKind.DWord);
                     k.SetValue("AlertsOverGames", AlertsOverGames ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("ShowDpiHud", ShowDpiHud ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("Appearance", Appearance, RegistryValueKind.DWord);
                 }
             }
