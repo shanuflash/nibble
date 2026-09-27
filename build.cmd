@@ -9,7 +9,10 @@ rem csc fails on very long TEMP paths; keep it short.
 set TMP=%~dp0obj
 set TEMP=%~dp0obj
 
-set OPTS=/nologo /target:winexe /optimize+ /unsafe+ /platform:anycpu /r:System.Windows.Forms.dll /r:System.Drawing.dll
+set OPTS=/nologo /target:winexe /optimize+ /unsafe+ /platform:anycpu /r:System.Windows.Forms.dll /r:System.Drawing.dll /resource:obj\Inter-Regular.ttf.gz,Inter-Regular.ttf.gz /resource:obj\Inter-SemiBold.ttf.gz,Inter-SemiBold.ttf.gz /resource:obj\InterDisplay-SemiBold.ttf.gz,InterDisplay-SemiBold.ttf.gz
+
+rem Embedded fonts are gzipped first (Inter, SIL OFL: fonts\OFL.txt).
+powershell -NoProfile -Command "foreach ($f in Get-ChildItem fonts\*.ttf) { $i = [IO.File]::OpenRead($f.FullName); $o = [IO.File]::Create('obj\' + $f.Name + '.gz'); $z = New-Object IO.Compression.GZipStream($o, [IO.Compression.CompressionLevel]::Optimal); $i.CopyTo($z); $z.Close(); $i.Close() }" || exit /b 1
 
 rem Pass 1: build a helper to render the app icon, pass 2: build with the icon embedded.
 "%CSC%" %OPTS% /out:obj\iconmaker.exe src\*.cs || exit /b 1

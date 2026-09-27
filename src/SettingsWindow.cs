@@ -63,9 +63,9 @@ namespace Nibble
             var wa = Screen.PrimaryScreen.Bounds;
             U = Math.Min(dpi, Math.Min(wa.Width * 0.94f / CW, wa.Height * 0.9f / CH));
 
-            string disp = Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold");
-            string text = Draw.PickFont("Segoe UI Variable Text", "Segoe UI");
-            string textSb = Draw.PickFont("Segoe UI Variable Text Semibold", "Segoe UI Semibold");
+            var disp = Fonts.Family(Fonts.Display, "Segoe UI Variable Display Semib", "Segoe UI Semibold");
+            var text = Fonts.Family(Fonts.Text, "Segoe UI Variable Text", "Segoe UI");
+            var textSb = Fonts.Family(Fonts.TextSemibold, "Segoe UI Variable Text Semibold", "Segoe UI Semibold");
             fTitle = Px(disp, 30); fHuge = Px(disp, 44); fBig = Px(disp, 26); fHead = Px(textSb, 17);
             fRow = Px(text, 15); fSub = Px(text, 12.5f); fCap = Px(text, 11.5f); fSemi = Px(textSb, 14); fSmallSemi = Px(textSb, 12.5f); fNav = Px(text, 14);
 
@@ -76,7 +76,7 @@ namespace Nibble
             app.StateChanged += OnState;
         }
 
-        Font Px(string f, float px) { return new Font(f, px * U, FontStyle.Regular, GraphicsUnit.Pixel); }
+        Font Px(FontFamily f, float px) { return new Font(f, px * U, FontStyle.Regular, GraphicsUnit.Pixel); }
         float F(float v) { return v * U; }
         int Pi(float v) { return (int)Math.Round(v * U); }
 

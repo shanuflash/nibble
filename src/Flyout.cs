@@ -71,9 +71,9 @@ namespace Nibble
             using (var g = CreateGraphics()) S = g.DpiX / 96f;
             Size = new Size(Px(PW + 2 * M), Px(PH + 2 * M));
 
-            string disp = Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold");
-            string text = Draw.PickFont("Segoe UI Variable Text", "Segoe UI");
-            string textSb = Draw.PickFont("Segoe UI Variable Text Semibold", "Segoe UI Semibold");
+            var disp = Fonts.Family(Fonts.Display, "Segoe UI Variable Display Semib", "Segoe UI Semibold");
+            var text = Fonts.Family(Fonts.Text, "Segoe UI Variable Text", "Segoe UI");
+            var textSb = Fonts.Family(Fonts.TextSemibold, "Segoe UI Variable Text Semibold", "Segoe UI Semibold");
             fNum = PxFont(disp, 60); fPct = PxFont(disp, 26); fTitle = PxFont(disp, 18);
             fName = PxFont(textSb, 15); fTileVal = PxFont(textSb, 15); fSeg = PxFont(textSb, 13); fBtn = PxFont(textSb, 15);
             fSub = PxFont(text, 13); fTileCap = PxFont(text, 12); fRow = PxFont(text, 15);
@@ -101,7 +101,7 @@ namespace Nibble
             return f;
         }
 
-        Font PxFont(string family, float px) { return new Font(family, px * S, FontStyle.Regular, GraphicsUnit.Pixel); }
+        Font PxFont(FontFamily family, float px) { return new Font(family, px * S, FontStyle.Regular, GraphicsUnit.Pixel); }
         int Px(float v) { return (int)Math.Round(v * S); }
         float F(float v) { return v * S; }
 
