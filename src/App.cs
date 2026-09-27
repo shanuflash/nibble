@@ -177,10 +177,27 @@ namespace Nibble
             });
         }
 
-        // Opens RK's official updater download in the browser; only ever from an explicit click.
+        public UpdateInfo Upd;
+        public bool UpdChecking;
+
+        public void CheckUpdates()
+        {
+            if (UpdChecking) return;
+            UpdChecking = true;
+            Changed();
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                UpdateInfo u = null;
+                try { u = Updates.Check(); } catch { }
+                ui.Post(delegate { Upd = u; UpdChecking = false; Changed(); }, null);
+            });
+        }
+
+        // Opens RK's updater or Nibble's release page in the browser; only ever from an explicit click.
         public void OpenUrl(string url)
         {
-            if (string.IsNullOrEmpty(url) || !url.StartsWith("https://drive.rkgaming.com/")) return;
+            if (string.IsNullOrEmpty(url)) return;
+            if (!url.StartsWith("https://drive.rkgaming.com/") && !url.StartsWith(Updates.ReleasesPage)) return;
             try { Process.Start(url); } catch { }
         }
 

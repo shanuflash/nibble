@@ -172,7 +172,9 @@ namespace Nibble
             if (p == page) return;
             page = p; pageT = 0; pageT0 = Environment.TickCount;
             dragging = false; resetArmedAt = int.MinValue;
-            if (p == 4 && app.Fw == null) app.CheckFirmware();   // network only when this page is opened
+            // Network only when the page that shows it is opened.
+            if (p == 4 && app.Fw == null) app.CheckFirmware();
+            if (p == 3 && app.Upd == null) app.CheckUpdates();
             Kick();
         }
 
@@ -287,60 +289,173 @@ namespace Nibble
             g.Restore(st);
         }
 
+        public static int SideStyle;   // 0 = inset panel, 1 = iPadOS flush, 2 = minimal (design exploration)
+
+        static readonly int[][] NavGroups = { new[] { 0, 1, 2, 4 }, new[] { 3 } };
+
         void PaintSidebar(Graphics g)
+        {
+            if (SideStyle == 1) { PaintSidebarFlush(g); return; }
+            if (SideStyle == 2) { PaintSidebarMinimal(g); return; }
+            PaintSidebarInset(g);
+        }
+
+        // Battery ring around the mouse glyph + name/status, shared by the sidebar styles.
+        void DeviceBadge(Graphics g, RectangleF box, Color under, bool compactText, float textX, float textW)
+        {
+            float rs = Math.Max(2.5f, box.Width * 0.08f);
+            var rr = RectangleF.Inflate(box, -rs / 2, -rs / 2);
+            using (var p = new Pen(th.Track, rs)) g.DrawEllipse(p, rr);
+            if (app.Percent > 0)
+                using (var p = new Pen(!app.Online ? th.Tertiary : app.Percent <= 20 && !app.Charging ? th.Red : th.Green, rs))
+                {
+                    p.StartCap = p.EndCap = LineCap.Round;
+                    g.DrawArc(p, rr, -90, 3.6f * app.Percent);
+                }
+            int ms = (int)Math.Round(box.Width * 0.5f);
+            using (var m = Glyphs.Compose(ms, Glyphs.Coverage(Glyphs.Mouse.ToString(), Glyphs.IconFace, ms, ms, 400, 0), app.Online ? th.Label : th.Secondary))
+                g.DrawImageUnscaled(m, (int)(box.X + (box.Width - ms) / 2), (int)(box.Y + (box.Height - ms) / 2));
+            string sub = !app.Found ? "Receiver not found"
+                : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
+                : string.Format("{0}% · {1}", app.Percent, app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
+            float cy = box.Y + box.Height / 2;
+            Txt(g, "RK M3", compactText ? fSemi : fHead, th.Label, under, new RectangleF(textX, cy - F(19), textW, F(20)), 0);
+            Txt(g, sub, fSub, th.Secondary, under, new RectangleF(textX, cy + F(1), textW, F(18)), 0);
+        }
+
+        // A: iPadOS Settings — flush full-height sidebar, device card row, roomy rows with icon tiles.
+        void PaintSidebarFlush(Graphics g)
+        {
+            var side = new RectangleF(0, 0, F(SideW), F(CH));
+            var fill = th.Dark ? Color.FromArgb(18, 255, 255, 255) : Color.FromArgb(90, 255, 255, 255);
+            using (var b = new SolidBrush(fill)) g.FillRectangle(b, side);
+            using (var p = new Pen(th.Separator, Math.Max(1f, F(0.8f)))) g.DrawLine(p, side.Right, 0, side.Right, side.Bottom);
+            var under = Blend(cardFlat, fill);
+
+            var dev = new RectangleF(F(14), F(22), side.Width - F(28), F(64));
+            Draw.FillRound(g, th.Platter, dev, F(14));
+            var devFlat = Blend(under, th.Platter);
+            DeviceBadge(g, new RectangleF(dev.X + F(12), dev.Y + F(12), F(40), F(40)), devFlat, true, dev.X + F(62), dev.Width - F(70));
+
+            float y = dev.Bottom + F(18);
+            foreach (var group in NavGroups)
+            {
+                foreach (int i in group)
+                {
+                    var r = new RectangleF(F(14), y, side.Width - F(28), F(40));
+                    string id = "nav" + i;
+                    bool sel = i == page;
+                    Color rowFill = sel ? th.Blue : hover == id ? (th.Dark ? Color.FromArgb(16, 255, 255, 255) : Color.FromArgb(110, 255, 255, 255)) : Color.Empty;
+                    if (!rowFill.IsEmpty) Draw.FillRound(g, rowFill, r, F(10));
+                    var tile = new RectangleF(r.X + F(10), r.Y + F(8), F(24), F(24));
+                    Tile(g, tile, PageTint(i));
+                    PageIcon(g, i, tile, Color.White);
+                    Txt(g, Pages[i], sel ? fSemi : fNav, sel ? Color.White : th.Label, sel ? Blend(under, th.Blue) : rowFill.IsEmpty ? under : Blend(under, rowFill),
+                        new RectangleF(tile.Right + F(12), r.Y, r.Width - F(50), r.Height), 0);
+                    int idx = i;
+                    AddHit(id, r, delegate { GoTo(idx); });
+                    y += F(42);
+                }
+                y += F(16);
+            }
+        }
+
+        // B: minimal (Music/Finder) — monochrome glyphs, tinted selection, device status docked at the bottom.
+        void PaintSidebarMinimal(Graphics g)
+        {
+            var side = new RectangleF(0, 0, F(SideW), F(CH));
+            var under = cardFlat;
+            using (var p = new Pen(th.Separator, Math.Max(1f, F(0.8f)))) g.DrawLine(p, side.Right, F(24), side.Right, side.Bottom - F(24));
+
+            float y = F(34);
+            Txt(g, "Settings", fHead, th.Label, under, new RectangleF(F(26), y, F(180), F(24)), 0);
+            y += F(40);
+            foreach (var group in NavGroups)
+            {
+                foreach (int i in group)
+                {
+                    var r = new RectangleF(F(14), y, side.Width - F(28), F(36));
+                    string id = "nav" + i;
+                    bool sel = i == page;
+                    Color tint = Color.FromArgb(th.Dark ? 46 : 30, th.Blue);
+                    Color rowFill = sel ? tint : hover == id ? (th.Dark ? Color.FromArgb(14, 255, 255, 255) : Color.FromArgb(10, 0, 0, 0)) : Color.Empty;
+                    if (!rowFill.IsEmpty) Draw.FillRound(g, rowFill, r, F(9));
+                    Color fg = sel ? th.Blue : th.Label;
+                    var icon = new RectangleF(r.X + F(10), r.Y + F(7), F(22), F(22));
+                    PageIcon(g, i, icon, sel ? th.Blue : th.Secondary);
+                    Txt(g, Pages[i], sel ? fSemi : fNav, fg, rowFill.IsEmpty ? under : Blend(under, rowFill),
+                        new RectangleF(icon.Right + F(12), r.Y, r.Width - F(50), r.Height), 0);
+                    int idx = i;
+                    AddHit(id, r, delegate { GoTo(idx); });
+                    y += F(38);
+                }
+                y += F(14);
+            }
+
+            // Device docked at the bottom, separated by a hairline.
+            float dy = side.Bottom - F(78);
+            using (var p = new Pen(th.Separator, Math.Max(1f, F(0.8f)))) g.DrawLine(p, F(24), dy, side.Right - F(24), dy);
+            DeviceBadge(g, new RectangleF(F(24), dy + F(18), F(40), F(40)), under, true, F(76), side.Width - F(90));
+        }
+
+        // C: inset floating panel (the previous design).
+        void PaintSidebarInset(Graphics g)
         {
             var side = new RectangleF(F(12), F(12), F(SideW - 12), F(CH - 24));
             Draw.FillRound(g, SideColor(), side, F(CR - 12));
             Draw.Rim(g, side, F(CR - 12), th.PlatterRimTop, th.PlatterRimBottom, Math.Max(1f, F(0.8f)));
 
-            // Device card: a live battery ring around the mouse, like the account card atop macOS Settings.
-            var ringBox = new RectangleF(side.X + F(14), side.Y + F(16), F(44), F(44));
-            float rs = F(3.5f);
-            var rr = RectangleF.Inflate(ringBox, -rs / 2, -rs / 2);
-            using (var p = new Pen(th.Track, rs)) g.DrawEllipse(p, rr);
-            if (app.Percent > 0)
-                using (var p = new Pen(!app.Online ? th.Tertiary : app.Charging ? th.Green : app.Percent <= 20 ? th.Red : th.Green, rs))
-                {
-                    p.StartCap = p.EndCap = LineCap.Round;
-                    g.DrawArc(p, rr, -90, 3.6f * app.Percent);
-                }
-            int ms = Pi(22);
-            using (var m = Glyphs.Compose(ms, Glyphs.Coverage(Glyphs.Mouse.ToString(), Glyphs.IconFace, ms, ms, 400, 0), app.Online ? th.Label : th.Secondary))
-                g.DrawImageUnscaled(m, (int)(ringBox.X + (ringBox.Width - ms) / 2), (int)(ringBox.Y + (ringBox.Height - ms) / 2));
-            Txt(g, "RK M3", fHead, th.Label, sideFlat, new RectangleF(ringBox.Right + F(12), ringBox.Y + F(3), F(150), F(22)), 0);
-            string sub = !app.Found ? "Receiver not found"
-                : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
-                : string.Format("{0}% · {1}", app.Percent, app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
-            Txt(g, sub, fSub, th.Secondary, sideFlat, new RectangleF(ringBox.Right + F(12), ringBox.Y + F(24), F(150), F(18)), 0);
+            // Branding: app icon + wordmark.
+            int ai = Pi(28);
+            using (var art = IconArt.AppArt(ai)) g.DrawImageUnscaled(art, (int)(side.X + F(16)), (int)(side.Y + F(18)));
+            Txt(g, "Nibble", fHead, th.Label, sideFlat, new RectangleF(side.X + F(16) + ai + F(10), side.Y + F(18), F(140), ai), 0);
+
+            // Device card: live battery ring around the mouse, name and status.
+            var card2 = new RectangleF(side.X + F(10), side.Y + F(62), side.Width - F(20), F(60));
+            Draw.FillRound(g, th.Platter, card2, F(14));
+            Draw.Rim(g, card2, F(14), th.PlatterRimTop, th.PlatterRimBottom, Math.Max(1f, F(0.8f)));
+            DeviceBadge(g, new RectangleF(card2.X + F(11), card2.Y + F(11), F(38), F(38)), Blend(sideFlat, th.Platter), true, card2.X + F(60), card2.Width - F(66));
 
             // Grouped navigation, macOS-style: small group titles, compact rows, accent selection.
-            int[][] groups = { new[] { 0, 1, 2, 4 }, new[] { 3 } };
             string[] titles = { "Mouse", "App" };
-            float y = side.Y + F(80);
-            for (int gi = 0; gi < groups.Length; gi++)
+            float y = card2.Bottom + F(18);
+            for (int gi = 0; gi < NavGroups.Length; gi++)
             {
-                Txt(g, titles[gi], fCap, th.Secondary, sideFlat, new RectangleF(side.X + F(18), y, F(160), F(18)), 0);
-                y += F(22);
-                foreach (int i in groups[gi])
+                Txt(g, titles[gi], fCap, th.Secondary, sideFlat, new RectangleF(side.X + F(18), y, F(160), F(16)), 0);
+                y += F(20);
+                foreach (int i in NavGroups[gi])
                 {
-                    var r = new RectangleF(side.X + F(8), y, side.Width - F(16), F(34));
+                    var r = new RectangleF(side.X + F(8), y, side.Width - F(16), F(36));
                     string id = "nav" + i;
                     bool sel = i == page;
                     Color rowFill = sel ? th.Blue : hover == id ? (th.Dark ? Color.FromArgb(18, 255, 255, 255) : Color.FromArgb(110, 255, 255, 255)) : Color.Empty;
-                    if (!rowFill.IsEmpty) Draw.FillRound(g, rowFill, r, F(9));
-                    var tile = new RectangleF(r.X + F(7), r.Y + F(6), F(22), F(22));
+                    if (!rowFill.IsEmpty) Draw.FillRound(g, rowFill, r, F(10));
+                    var tile = new RectangleF(r.X + F(7), r.Y + F(6), F(24), F(24));
                     Tile(g, tile, PageTint(i));
-                    PageGlyph(g, i, tile);
-                    Txt(g, Pages[i], fNav, sel ? Color.White : th.Label, sel ? Blend(sideFlat, th.Blue) : rowFill.IsEmpty ? sideFlat : Blend(sideFlat, rowFill),
-                        new RectangleF(tile.Right + F(10), r.Y, r.Width - F(44), r.Height), 0);
+                    PageIcon(g, i, tile, Color.White);
+                    Txt(g, Pages[i], sel ? fSemi : fNav, sel ? Color.White : th.Label, sideFlat,
+                        new RectangleF(tile.Right + F(11), r.Y, r.Width - F(46), r.Height), 0);
                     int idx = i;
                     AddHit(id, r, delegate { GoTo(idx); });
-                    y += F(36);
+                    y += F(38);
                 }
-                y += F(12);
+                y += F(14);
             }
         }
 
+        // Page icons are Segoe Fluent glyphs (same set as the tray), cached per size and colour.
+        static readonly char[] PageGlyphs = { '\uEC4A', '\uE945', '\uEBA7', '\uE9E9', '\uE962' };
+        readonly Dictionary<string, Bitmap> iconCache = new Dictionary<string, Bitmap>();
+
+        void PageIcon(Graphics g, int i, RectangleF box, Color c)
+        {
+            int s = (int)Math.Round(box.Width), px = (int)Math.Round(box.Width * 0.62f);
+            string key = i + ":" + s + ":" + c.ToArgb();
+            Bitmap bmp;
+            if (!iconCache.TryGetValue(key, out bmp))
+                iconCache[key] = bmp = Glyphs.Compose(s, Glyphs.Coverage(PageGlyphs[i].ToString(), Glyphs.IconFace, s, px, 400, 0), c);
+            g.DrawImageUnscaled(bmp, (int)Math.Round(box.X), (int)Math.Round(box.Y));
+        }
         Color PageTint(int i)
         {
             switch (i)
@@ -384,7 +499,7 @@ namespace Nibble
             else if (!app.Online) { msg = app.Found ? "Mouse asleep — move it to wake" : "Receiver not connected"; mc = th.Orange; }
             if (msg != null)
             {
-                var sz = TextRenderer.MeasureText(msg, fSmallSemi, Size.Empty, TextFormatFlags.NoPadding);
+                var sz = MeasureT(msg, fSmallSemi);
                 var pill = new RectangleF(close.X - F(12) - sz.Width - F(28), F(29), sz.Width + F(28), F(26));
                 var fill = th.Dark ? Color.FromArgb(30, 255, 255, 255) : Color.FromArgb(170, 255, 255, 255);
                 Draw.FillRound(g, fill, pill, pill.Height / 2);
@@ -479,8 +594,8 @@ namespace Nibble
             AddHit("minus", minus, delegate { SetStageDpi(v - 50); });
             AddHit("plus", plus, delegate { SetStageDpi(v + 50); });
             string vs = v.ToString();
-            var vsz = TextRenderer.MeasureText(vs, fHuge, Size.Empty, TextFormatFlags.NoPadding);
-            var unitX = minus.X - F(18) - TextRenderer.MeasureText("DPI", fSemi, Size.Empty, TextFormatFlags.NoPadding).Width;
+            var vsz = MeasureT(vs, fHuge);
+            var unitX = minus.X - F(18) - MeasureT("DPI", fSemi).Width;
             var vr = new RectangleF(unitX - F(8) - vsz.Width, ed.Y + F(12), vsz.Width + F(2), F(50));
             Txt(g, vs, fHuge, th.Label, pf, vr, 0);
             Txt(g, "DPI", fSemi, th.Secondary, pf, new RectangleF(unitX, vr.Y + F(21), F(40), F(24)), 0);
@@ -506,7 +621,7 @@ namespace Nibble
             foreach (int preset in Presets)
             {
                 string label = preset.ToString();
-                float w = TextRenderer.MeasureText(label, fSmallSemi, Size.Empty, TextFormatFlags.NoPadding).Width + F(26);
+                float w = MeasureT(label, fSmallSemi).Width + F(26);
                 var chip = new RectangleF(px, py, w, F(30));
                 int pv = preset;
                 Chip(g, chip, label, v == preset, "preset" + preset, delegate { SetStageDpi(pv); });
@@ -671,8 +786,10 @@ namespace Nibble
             }
             y = gp.Bottom + F(14);
 
-            var p = new RectangleF(c.X, y, c.Width, rh * 4);
+            var p = new RectangleF(c.X, y, c.Width, rh * 5);
             Platter(g, p);
+            PaintUpdateRow(g, p, 4, rh);
+            Sep(g, p, rh * 4);
             RowLabel(g, p, 0, rh, "Appearance", "Nibble’s panels and this window");
             Segmented(g, new RectangleF(p.Right - F(14) - F(270), p.Y + (rh - F(32)) / 2, F(270), F(32)), new[] { "System", "Light", "Dark" },
                 app.Appearance, "appearance", delegate (int i) { app.SetAppearance(i); });
@@ -736,6 +853,26 @@ namespace Nibble
                 new RectangleF(c.X, c.Bottom - F(20), c.Width, F(18)), 0);
         }
 
+        // Nibble's own version vs. the latest GitHub release.
+        void PaintUpdateRow(Graphics g, RectangleF p, int i, float rh)
+        {
+            var u = app.Upd;
+            string sub = app.UpdChecking ? "Checking GitHub…"
+                : u == null ? "Latest releases from GitHub"
+                : u.Available ? "Version " + u.Tag + " is available"
+                : u.NoReleases ? "No releases published yet"
+                : u.Failed ? "Couldn’t reach GitHub"
+                : "You’re up to date";
+            RowLabel(g, p, i, rh, "Nibble " + Updates.Current, sub);
+            float cy = p.Y + rh * i + rh / 2;
+            var r = new RectangleF(p.Right - F(18) - F(130), cy - F(15), F(130), F(30));
+            if (app.UpdChecking) return;
+            if (u != null && u.Available)
+                Button(g, r, "Get " + u.Tag, Color.White, "upd", delegate { app.OpenUrl(u.Url ?? Updates.ReleasesPage); }, th.Blue);
+            else
+                Button(g, r, u == null || u.Failed ? "Check now" : "Check again", th.Label, "upd", app.CheckUpdates);
+        }
+
         // Firmware: installed vs. RK's published versions, with a hand-off to RK's official updater.
         float PaintFirmware(Graphics g, RectangleF c, float y)
         {
@@ -789,6 +926,9 @@ namespace Nibble
             if (url != null)
                 Button(g, new RectangleF(p.Right - F(18) - F(150), cy - F(15), F(150), F(30)), "Updater " + latest, th.Label, id, delegate { app.OpenUrl(url); });
         }
+
+        // Same metrics (incl. tracking) as the GDI text renderer.
+        Size MeasureT(string s, Font f) { return Size.Ceiling(TextStyle.Measure(s, f)); }
 
         void Button(Graphics g, RectangleF r, string label, Color fg, string id, Action a) { Button(g, r, label, fg, id, a, Color.Empty); }
 
@@ -911,54 +1051,16 @@ namespace Nibble
             return p;
         }
 
-        void PageGlyph(Graphics g, int i, RectangleF t)
-        {
-            float cx = t.X + t.Width / 2, cy = t.Y + t.Height / 2;
-            using (var p = new Pen(Color.White, F(1.7f)) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
-            {
-                if (i == 0)
-                {
-                    g.DrawEllipse(p, cx - F(5), cy - F(5), F(10), F(10));
-                    g.DrawLine(p, cx, cy - F(8), cx, cy - F(3)); g.DrawLine(p, cx, cy + F(3), cx, cy + F(8));
-                    g.DrawLine(p, cx - F(8), cy, cx - F(3), cy); g.DrawLine(p, cx + F(3), cy, cx + F(8), cy);
-                }
-                else if (i == 1) Draw.Bolt(g, Color.White, new RectangleF(cx - F(5), cy - F(8), F(10), F(16)));
-                else if (i == 2)
-                {
-                    using (var path = Draw.Round(new RectangleF(cx - F(8), cy - F(4.5f), F(14), F(9)), F(2.5f))) g.DrawPath(p, path);
-                    g.DrawLine(p, cx + F(8), cy - F(1.5f), cx + F(8), cy + F(1.5f));
-                    using (var b = new SolidBrush(Color.White)) g.FillRectangle(b, cx - F(6), cy - F(2.5f), F(6), F(5));
-                }
-                else if (i == 3)
-                {
-                    // sliders: app preferences
-                    float[] ys = { -F(4.5f), F(0), F(4.5f) }, ks = { F(2.5f), -F(3), F(1) };
-                    for (int k = 0; k < 3; k++) g.DrawLine(p, cx - F(7), cy + ys[k], cx + F(7), cy + ys[k]);
-                    using (var b = new SolidBrush(Color.White))
-                        for (int k = 0; k < 3; k++) g.FillEllipse(b, cx + ks[k] - F(2.3f), cy + ys[k] - F(2.3f), F(4.6f), F(4.6f));
-                }
-                else
-                {
-                    using (var path = Draw.Round(new RectangleF(cx - F(5), cy - F(8), F(10), F(16)), F(5))) g.DrawPath(p, path);
-                    g.DrawLine(p, cx, cy - F(7.5f), cx, cy - F(3));
-                }
-            }
-        }
-
         void AddHit(string id, RectangleF r, Action a)
         {
             if (pageT < 1 && id.StartsWith("nav") == false && id != "close") return; // ignore taps while a page fades in
             hits.Add(new Hit { Id = id, R = new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height), Do = a });
         }
 
-        // GDI text straight into the DIB for native ClearType; translucent colours are pre-blended
-        // onto the surface below. GDI ignores GDI+ transforms, so the card offset is applied by hand.
+        // `under` is unused now that text is drawn with real alpha; kept so call sites read the same.
         void Txt(Graphics g, string s, Font f, Color c, Color under, RectangleF r, int align)
         {
-            float k = c.A / 255f * va;
-            var col = Color.FromArgb(255, (int)(under.R + (c.R - under.R) * k), (int)(under.G + (c.G - under.G) * k), (int)(under.B + (c.B - under.B) * k));
-            g.Flush(FlushIntention.Sync);
-            frame.Text(s, f, col, Rectangle.Round(new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height)), align);
+            TextStyle.Draw(g, s, f, Av(c), r, align == 1 ? TextStyle.Center : align == 2 ? TextStyle.Right : TextStyle.Left);
         }
 
         // ---------- input ----------
