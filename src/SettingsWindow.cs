@@ -312,9 +312,8 @@ namespace Nibble
                     p.StartCap = p.EndCap = LineCap.Round;
                     g.DrawArc(p, rr, -90, 3.6f * app.Percent);
                 }
-            int ms = (int)Math.Round(box.Width * 0.5f);
-            using (var m = Glyphs.Compose(ms, Glyphs.CenteredCoverage(Glyphs.Mouse.ToString(), Glyphs.IconFace, ms, ms, 400), app.Online ? th.Label : th.Secondary))
-                g.DrawImageUnscaled(m, (int)(box.X + (box.Width - ms) / 2), (int)(box.Y + (box.Height - ms) / 2));
+            // Same custom mouse as the Device tile, centred on the ring's exact centre (no pixel truncation).
+            DrawIcon(g, 4, new PointF(box.X + box.Width / 2, box.Y + box.Height / 2), box.Width * 0.46f, app.Online ? th.Label : th.Secondary);
             string sub = !app.Found ? "Receiver not found"
                 : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
                 : string.Format("{0}% · {1}", app.Percent, app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
@@ -444,6 +443,26 @@ namespace Nibble
         }
 
         readonly Dictionary<string, Bitmap> iconCache = new Dictionary<string, Bitmap>();
+
+        // Draws a page symbol directly, its geometric centre on `center`, longest side `ink` px.
+        void DrawIcon(Graphics g, int i, PointF center, float ink, Color c)
+        {
+            var parts = Icons.Parts(i);
+            var b = parts[0].GetBounds();
+            foreach (var part in parts) b = RectangleF.Union(b, part.GetBounds());
+            float k = ink / Math.Max(b.Width, b.Height);
+            var mode = g.PixelOffsetMode;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            using (var m = new Matrix())
+            using (var brush = new SolidBrush(Av(c)))
+            {
+                m.Translate(center.X, center.Y);
+                m.Scale(k, k);
+                m.Translate(-(b.X + b.Width / 2), -(b.Y + b.Height / 2));
+                foreach (var part in parts) { part.Transform(m); g.FillPath(brush, part); part.Dispose(); }
+            }
+            g.PixelOffsetMode = mode;
+        }
 
         // Page icons: custom symbols on a 24-unit grid (bold 2-unit strokes, filled where it reads better).
         // Each is one path, scaled to the same ink size and centred on its true geometric bounds.
