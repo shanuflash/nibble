@@ -9,8 +9,8 @@ rem csc fails on very long TEMP paths; keep it short.
 set TMP=%~dp0obj
 set TEMP=%~dp0obj
 
-rem Version comes from NIBBLE_VERSION (the release workflow sets it), default 0.1.1.
-if "%NIBBLE_VERSION%"=="" set NIBBLE_VERSION=0.1.1
+rem Version comes from NIBBLE_VERSION (the release workflow sets it), default 0.1.2.
+if "%NIBBLE_VERSION%"=="" set NIBBLE_VERSION=0.1.2
 > obj\Version.cs echo [assembly: System.Reflection.AssemblyVersion("%NIBBLE_VERSION%.0")]
 >> obj\Version.cs echo [assembly: System.Reflection.AssemblyFileVersion("%NIBBLE_VERSION%.0")]
 
