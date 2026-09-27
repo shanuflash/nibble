@@ -72,9 +72,15 @@ namespace Nibble
                         if (inside[i]) { int y = i / s; if (y < top) top = y; if (y > bottom) bottom = y; }
                     int cut = bottom - (int)Math.Round((bottom - top + 1) * Math.Max(0, Math.Min(100, percent)) / 100.0) + 1;
                     var level = new bool[s * s];
-                    for (int i = 0; i < inside.Length; i++) level[i] = inside[i] && i / s >= cut;
-                    Color fill = asleep ? Color.FromArgb(90, fg) : charging ? green : low ? red : Color.FromArgb(235, fg);
-                    return Glyphs.Compose(s, level, fill, cov, line);
+                    var empty = new bool[s * s];
+                    for (int i = 0; i < inside.Length; i++) { level[i] = inside[i] && i / s >= cut; empty[i] = inside[i] && !level[i]; }
+                    // A coloured fill over a faint empty part, so it reads as a level rather than a solid mouse.
+                    Color fill = asleep ? Color.FromArgb(90, fg)
+                        : charging ? green
+                        : low ? red
+                        : percent <= 50 ? amber
+                        : green;
+                    return Glyphs.Compose(s, empty, Color.FromArgb(light ? 30 : 45, fg), level, fill, cov, line);
                 }
             }
         }
