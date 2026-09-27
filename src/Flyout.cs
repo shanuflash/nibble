@@ -483,25 +483,10 @@ namespace Nibble
 
         void Txt(Graphics g, string s, Font f, Color c, RectangleF r, StringFormat sf)
         {
-            // GDI text for native ClearType. It ignores GDI+ transforms, so apply the view offset by hand,
-            // and flush pending GDI+ drawing first so text lands on top of it.
-            g.Flush(FlushIntention.Sync);
-            int align = sf == sfC ? 1 : (sf == sfR ? 2 : 0);
-            var rr = Rectangle.Round(new RectangleF(r.X + tx, r.Y + ty, r.Width, r.Height));
-            frame.Text(s, f, Flat(c), rr, align);
+            TextStyle.Draw(g, s, f, A(c), r, sf);
         }
 
-        // Opaque equivalent of a translucent color over the frosted backdrop, including view fade.
-        Color Flat(Color c)
-        {
-            float k = c.A / 255f * va;
-            return Color.FromArgb(255,
-                (int)(bgAvg.R + (c.R - bgAvg.R) * k),
-                (int)(bgAvg.G + (c.G - bgAvg.G) * k),
-                (int)(bgAvg.B + (c.B - bgAvg.B) * k));
-        }
-
-        SizeF Measure(string s, Font f) { return frame.Measure(s, f); }
+        SizeF Measure(string s, Font f) { return TextStyle.Measure(s, f); }
 
         float Ascent(Font f) { return f.Size * f.FontFamily.GetCellAscent(f.Style) / f.FontFamily.GetEmHeight(f.Style); }
         float LineH(Font f) { return f.Size * (f.FontFamily.GetCellAscent(f.Style) + f.FontFamily.GetCellDescent(f.Style)) / f.FontFamily.GetEmHeight(f.Style); }
