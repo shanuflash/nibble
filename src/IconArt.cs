@@ -36,7 +36,8 @@ namespace Nibble
             Color red = light ? Theme.Hex(0xE0352B) : Theme.Hex(0xFF453A);
             Color amber = light ? Theme.Hex(0xC98A00) : Theme.Hex(0xFFB020);
             bool low = percent >= 0 && percent <= 20;
-            Color line = asleep ? Color.FromArgb(150, fg) : fg;
+            // Charging with no level to show: the outline itself turns green.
+            Color line = asleep ? Color.FromArgb(150, fg) : charging && percent < 0 ? green : fg;
             Color state = asleep ? Color.FromArgb(150, fg) : charging ? green : low ? red : fg;
             string mouse = Glyphs.Mouse.ToString();
 

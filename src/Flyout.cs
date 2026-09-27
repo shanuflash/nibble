@@ -326,6 +326,14 @@ namespace Nibble
             float x = F(148), w = F(PW - 148 - 20);
             Txt(g, "RK M3", fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), sfL);
             bool known = app.Percent >= 0;
+            if (app.Online && app.ChargeFromLast)
+            {
+                // No real level while charging: a large bolt stands in for the number.
+                Draw.Bolt(g, A(th.Green), new RectangleF(x + F(2), F(52), F(32), F(50)));
+                known = false;
+            }
+            else
+            {
             string num = known ? ((int)Math.Round(ring * 100)).ToString() : "—";
             SizeF ns = Measure(num, fNum);
             var nr = new RectangleF(x - F(3), F(46), ns.Width + F(4), F(62));
@@ -335,6 +343,7 @@ namespace Nibble
                 float baseline = nr.Y + nr.Height / 2 + Ascent(fNum) - LineH(fNum) / 2;
                 float top = baseline - Ascent(fPct);
                 Txt(g, "%", fPct, th.Secondary, new RectangleF(nr.X + ns.Width + F(2), top, F(30), LineH(fPct)), sfL);
+            }
             }
 
             // Status line

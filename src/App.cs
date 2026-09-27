@@ -337,12 +337,12 @@ namespace Nibble
         // ---------- alerts ----------
 
         // ---------- charging ----------
-        // While charging, the M3 reports a flat "100" (0xE4) instead of its real level, so Nibble keeps
-        // showing the last real reading from before the cable went in. When the firmware clears the
-        // charging bit at 100 while still wired, the charge is done.
+        // While charging, the M3 reports a flat "100" (0xE4) instead of its real level, so Nibble shows no
+        // number, just "Charging". When the firmware clears the charging bit at 100 while still wired,
+        // the charge is done.
 
         public bool FullyCharged;
-        public bool ChargeFromLast;         // charging: Percent is the last real reading, not live
+        public bool ChargeFromLast;         // charging with no real level available (Percent is -1)
         public string PercentText { get { return Percent + "%"; } }
         int lastRealPercent = -1;           // last level read while not charging
 
@@ -352,7 +352,7 @@ namespace Nibble
             FullyCharged = !charging && raw >= 100 && Wired;
             ChargeFromLast = charging && raw >= 100;
             if (ChargeFromLast)
-                Percent = lastRealPercent;
+                Percent = -1;
             else
             {
                 Percent = raw;
@@ -385,7 +385,7 @@ namespace Nibble
             if (!Found) return "Receiver not found";
             if (!Online) return "Mouse asleep";
             if (FullyCharged) return "Fully charged";
-            if (Charging) return ChargeFromLast && Percent >= 0 ? "Charging · last reading" : "Charging";
+            if (Charging) return "Charging";
             if (Percent <= 20) return "Low battery";
             return "On battery";
         }

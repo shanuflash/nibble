@@ -316,7 +316,7 @@ namespace Nibble
             DrawIcon(g, 4, new PointF(box.X + box.Width / 2, box.Y + box.Height / 2), box.Width * 0.46f, app.Online ? th.Label : th.Secondary);
             string sub = !app.Found ? "Receiver not found"
                 : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
-                : string.Format("{0} · {1}", app.PercentText, app.FullyCharged ? "charged" : app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
+                : app.Percent < 0 ? (app.Charging ? "Charging" : "Connected") : string.Format("{0} · {1}", app.PercentText, app.FullyCharged ? "charged" : app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
             float cy = box.Y + box.Height / 2;
             Txt(g, "RK M3", compactText ? fSemi : fHead, th.Label, under, new RectangleF(textX, cy - F(19), textW, F(20)), 0);
             Txt(g, sub, fSub, th.Secondary, under, new RectangleF(textX, cy + F(1), textW, F(18)), 0);
