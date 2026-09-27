@@ -2,32 +2,34 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
-namespace Nibble
+namespace Nibble.UI
 {
-    // Settings page symbols, drawn on a 24×24 grid. Strokes are widened into filled outlines; each part is
+    enum Symbol { Scope, Bolt, Battery, Sliders, Mouse }
+
+    // Vector symbols on a 24×24 grid. Strokes are widened into filled outlines; each part is
     // filled on its own (so overlaps never cancel out) and the union of parts is measured for centring.
     static class Icons
     {
         const float W = 2f;   // stroke width in grid units
 
-        public static List<GraphicsPath> Parts(int page)
+        public static List<GraphicsPath> Parts(Symbol symbol)
         {
             var p = new List<GraphicsPath>();
-            switch (page)
+            switch (symbol)
             {
-                case 0: Dpi(p); break;
-                case 1: Bolt(p); break;
-                case 2: Battery(p); break;
-                case 3: Sliders(p); break;
+                case Symbol.Scope: Scope(p); break;
+                case Symbol.Bolt: Bolt(p); break;
+                case Symbol.Battery: Battery(p); break;
+                case Symbol.Sliders: Sliders(p); break;
                 default: Mouse(p); break;
             }
             return p;
         }
 
-        // Fills symbol `page` with its geometric centre on `center` and its longest side `ink` px.
-        public static void Fill(Graphics g, int page, PointF center, float ink, Color c)
+        // Fills the symbol with its geometric centre on `center` and its longest side `ink` px.
+        public static void Fill(Graphics g, Symbol symbol, PointF center, float ink, Color c)
         {
-            var parts = Parts(page);
+            var parts = Parts(symbol);
             var b = parts[0].GetBounds();
             foreach (var part in parts) b = RectangleF.Union(b, part.GetBounds());
             float k = ink / System.Math.Max(b.Width, b.Height);
@@ -54,8 +56,8 @@ namespace Nibble
             parts.Add(g);
         }
 
-        // DPI: a scope, ring with four ticks and a centre dot.
-        static void Dpi(List<GraphicsPath> p)
+        // Ring with four ticks and a centre dot.
+        static void Scope(List<GraphicsPath> p)
         {
             Stroke(p, s => s.AddEllipse(5.5f, 5.5f, 13, 13));
             Stroke(p, s => { s.AddLine(12, 1.5f, 12, 5.5f); s.StartFigure(); s.AddLine(12, 18.5f, 12, 22.5f); });
@@ -63,7 +65,6 @@ namespace Nibble
             Add(p, s => s.AddEllipse(10, 10, 4, 4));
         }
 
-        // Performance: a solid bolt.
         static void Bolt(List<GraphicsPath> p)
         {
             Add(p, s => s.AddPolygon(new[]
@@ -73,7 +74,6 @@ namespace Nibble
             }));
         }
 
-        // Power: battery outline with a charge block and nub.
         static void Battery(List<GraphicsPath> p)
         {
             Stroke(p, s => s.AddPath(Round(new RectangleF(1.5f, 6.5f, 18, 11), 3.2f), false));
@@ -81,7 +81,6 @@ namespace Nibble
             Add(p, s => s.AddPath(Round(new RectangleF(4.5f, 9.5f, 9, 5), 1.2f), false));
         }
 
-        // General: three sliders with solid knobs.
         static void Sliders(List<GraphicsPath> p)
         {
             float[] ys = { 5, 12, 19 }, ks = { 15.5f, 8f, 13.5f };
@@ -89,7 +88,6 @@ namespace Nibble
             for (int i = 0; i < 3; i++) { int k = i; Add(p, s => s.AddEllipse(ks[k] - 3.2f, ys[k] - 3.2f, 6.4f, 6.4f)); }
         }
 
-        // Device: mouse body with the button split.
         static void Mouse(List<GraphicsPath> p)
         {
             Stroke(p, s => s.AddPath(Round(new RectangleF(5.5f, 1.5f, 13, 21), 6.5f), false));

@@ -1,12 +1,11 @@
 using System;
 using System.Net;
-using System.Reflection;
 using System.Text.RegularExpressions;
+using Nibble.Platform;
 
 namespace Nibble
 {
-    // Nibble's own updates, from the latest GitHub release. Checked on demand only.
-    class UpdateInfo
+    sealed class UpdateInfo
     {
         public Version Current, Latest;
         public string Tag, Url;
@@ -14,30 +13,17 @@ namespace Nibble
         public bool Available { get { return Latest != null && Current != null && Latest > Current; } }
     }
 
+    // Nibble's own updates, from the latest GitHub release. Checked on demand only.
     static class Updates
     {
-        const string Api = "https://api.github.com/repos/shanuflash/nibble/releases/latest";
-        public const string ReleasesPage = "https://github.com/shanuflash/nibble/releases";
-
-        public static Version Current
-        {
-            get { var v = Assembly.GetExecutingAssembly().GetName().Version; return new Version(v.Major, v.Minor, Math.Max(0, v.Build)); }
-        }
+        const string Api = "https://api.github.com/repos/" + AppInfo.Repo + "/releases/latest";
 
         public static UpdateInfo Check()
         {
-            var info = new UpdateInfo { Current = Current };
+            var info = new UpdateInfo { Current = AppInfo.Version };
             try
             {
-                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072; // TLS 1.2
-                var req = (HttpWebRequest)WebRequest.Create(Api);
-                req.UserAgent = "Nibble/" + info.Current;          // GitHub's API requires a user agent
-                req.Accept = "application/vnd.github+json";
-                req.Timeout = 10000;
-                string json;
-                using (var resp = (HttpWebResponse)req.GetResponse())
-                using (var r = new System.IO.StreamReader(resp.GetResponseStream()))
-                    json = r.ReadToEnd();
+                string json = Http.Get(Api, "application/vnd.github+json");
                 info.Tag = Str(json, "tag_name");
                 info.Url = Str(json, "html_url");
                 Version v;

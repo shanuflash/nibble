@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace Nibble
+namespace Nibble.UI
 {
     // Renders Segoe Fluent Icons glyphs the way the shell does: GDI with font hinting and greyscale
     // anti-aliasing, then coverage becomes alpha. Crisp at 16 px, matching the other tray icons.
@@ -31,7 +31,7 @@ namespace Nibble
         }
 
         // Coverage (0..255) of text drawn centred in an s×s cell with GDI's hinted greyscale AA.
-        public static byte[] Coverage(string text, string fontFace, int s, int px, int weight, int dy)
+        public static byte[] Coverage(string text, string fontFace, int s, int px)
         {
             using (var bmp = new Bitmap(s, s, PixelFormat.Format24bppRgb))
             {
@@ -39,11 +39,11 @@ namespace Nibble
                 {
                     g.Clear(Color.Black);
                     IntPtr dc = g.GetHdc();
-                    IntPtr font = CreateFontW(-px, 0, 0, 0, weight, 0, 0, 0, 1, 0, 0, 4 /* ANTIALIASED_QUALITY */, 0, fontFace);
+                    IntPtr font = CreateFontW(-px, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 4 /* ANTIALIASED_QUALITY */, 0, fontFace);
                     IntPtr old = SelectObject(dc, font);
                     SetTextColor(dc, 0xFFFFFF);
                     SetBkMode(dc, 1);
-                    var rc = new RECT { L = 0, T = dy, R = s, B = s + dy };
+                    var rc = new RECT { L = 0, T = 0, R = s, B = s };
                     DrawTextW(dc, text, text.Length, ref rc, 0x1 | 0x4 | 0x20 | 0x100); // CENTER | VCENTER | SINGLELINE | NOCLIP
                     SelectObject(dc, old);
                     DeleteObject(font);
@@ -59,52 +59,6 @@ namespace Nibble
                         cov[y * s + x] = raw[y * data.Stride + x * 3 + 1]; // green channel = coverage
                 return cov;
             }
-        }
-
-        // Like Coverage, but centred on the glyph's actual ink rather than the font's line box, so icons
-        // with different internal offsets all sit dead-centre. Shifts are whole pixels to keep hinting crisp.
-        public static byte[] CenteredCoverage(string text, string fontFace, int s, int px, int weight)
-        {
-            int big = s * 2;
-            var cov = Coverage(text, fontFace, big, px, weight, 0);
-            int minX = big, minY = big, maxX = -1, maxY = -1;
-            for (int y = 0; y < big; y++)
-                for (int x = 0; x < big; x++)
-                    if (cov[y * big + x] > 127)   // the visible edge: half coverage, not faint AA fringe
-                    {
-                        if (x < minX) minX = x; if (x > maxX) maxX = x;
-                        if (y < minY) minY = y; if (y > maxY) maxY = y;
-                    }
-            var outp = new byte[s * s];
-            if (maxX < 0) return outp;
-            int dx = (int)Math.Round((s - (maxX - minX + 1)) / 2.0 - minX, MidpointRounding.AwayFromZero);
-            int dy = (int)Math.Round((s - (maxY - minY + 1)) / 2.0 - minY, MidpointRounding.AwayFromZero);
-            for (int y = 0; y < big; y++)
-                for (int x = 0; x < big; x++)
-                {
-                    int ox = x + dx, oy = y + dy;
-                    if (ox >= 0 && oy >= 0 && ox < s && oy < s) outp[oy * s + ox] = cov[y * big + x];
-                }
-            return outp;
-        }
-
-        // Optically balanced icon: rescales the glyph so its ink's longest side is `ink` px, then centres it.
-        public static byte[] FittedCoverage(string text, string fontFace, int s, int ink, int weight)
-        {
-            int probe = s * 2, big = s * 4;
-            var cov = Coverage(text, fontFace, big, probe, weight, 0);
-            int minX = big, minY = big, maxX = -1, maxY = -1;
-            for (int y = 0; y < big; y++)
-                for (int x = 0; x < big; x++)
-                    if (cov[y * big + x] > 24)
-                    {
-                        if (x < minX) minX = x; if (x > maxX) maxX = x;
-                        if (y < minY) minY = y; if (y > maxY) maxY = y;
-                    }
-            if (maxX < 0) return new byte[s * s];
-            float extent = Math.Max(maxX - minX + 1, maxY - minY + 1);
-            int px = Math.Max(4, (int)Math.Round(probe * ink / extent));
-            return CenteredCoverage(text, fontFace, s, px, weight);
         }
 
         // Pixels enclosed by a glyph's outline, found by flood-filling the background from the edges.

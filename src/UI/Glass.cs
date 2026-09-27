@@ -4,7 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace Nibble
+namespace Nibble.UI
 {
     // Cheap frosted-glass building blocks. Everything runs once per panel open on tiny bitmaps.
     static class Glass
@@ -89,11 +89,9 @@ namespace Nibble
             return Color.FromArgb(a, baseTint.R, baseTint.G, baseTint.B);
         }
 
-        // Mean color of an opaque bitmap; GDI text can't blend alpha, so translucent text colors
-        // are flattened against this.
+        // Mean colour of an opaque bitmap, what translucent text is flattened against.
         public static Color Average(Bitmap source)
         {
-            // Downscale first so a full-screen backdrop doesn't cost a screen-sized managed array.
             using (var bmp = new Bitmap(32, 32, PixelFormat.Format32bppArgb))
             {
                 using (var g = Graphics.FromImage(bmp))

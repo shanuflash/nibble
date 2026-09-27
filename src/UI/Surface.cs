@@ -5,43 +5,12 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace Nibble
+namespace Nibble.UI
 {
-    // Presents a Surface on a WS_EX_LAYERED window with per-pixel alpha.
-    static class Layered
-    {
-        // Shared anchor for every popup (flyout, notifications, DPI popup): the corner next to the tray,
-        // `gap` px in from the screen edge and the taskbar. Returns the panel's top-left in screen px.
-        public static Point Corner(System.Windows.Forms.Screen screen, Size panel, int gap)
-        {
-            Rectangle wa = screen.WorkingArea, b = screen.Bounds;
-            int x = wa.Right - panel.Width - gap, y = wa.Bottom - panel.Height - gap;
-            if (wa.Top > b.Top) y = wa.Top + gap;           // taskbar on top
-            else if (wa.Left > b.Left) x = wa.Left + gap;   // taskbar on the left
-            return new Point(x, y);
-        }
-
-        [StructLayout(LayoutKind.Sequential)] struct PT { public int X, Y; }
-        [StructLayout(LayoutKind.Sequential)] struct SZ { public int W, H; }
-        [StructLayout(LayoutKind.Sequential, Pack = 1)] struct BLEND { public byte Op, Flags, Alpha, Format; }
-        [DllImport("user32.dll")] static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr dst, ref PT pos, ref SZ size, IntPtr src, ref PT srcPos, int key, ref BLEND blend, int flags);
-        [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h);
-        [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr h, IntPtr dc);
-
-        public static void Push(IntPtr hwnd, Surface s, int x, int y, byte alpha)
-        {
-            IntPtr screen = GetDC(IntPtr.Zero);
-            var size = new SZ { W = s.W, H = s.H };
-            var src = new PT();
-            var pos = new PT { X = x, Y = y };
-            var blend = new BLEND { Alpha = alpha, Format = 1 }; // AC_SRC_ALPHA
-            UpdateLayeredWindow(hwnd, screen, ref pos, ref size, s.Dc, ref src, 0, ref blend, 2);
-            ReleaseDC(IntPtr.Zero, screen);
-        }
-    }
-
     // A 32bpp DIB section shared by GDI+ (shapes) and GDI (text), so text gets native ClearType
     // without any copies. A precomputed alpha mask cuts the rounded panel out afterwards.
+    enum TextAlign { Left, Center, Right }
+
     sealed class Surface : IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
@@ -135,13 +104,13 @@ namespace Nibble
             }
         }
 
-        public void Text(string s, Font f, Color c, Rectangle r, int align)
+        public void Text(string s, Font f, Color c, Rectangle r, TextAlign align)
         {
             SelectObject(Dc, HFont(f));
             SetTextColor(Dc, c.R | (c.G << 8) | (c.B << 16));
             var rc = new RECT { Left = r.Left, Top = r.Top, Right = r.Right, Bottom = r.Bottom };
             int flags = DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_NOCLIP;
-            if (align == 1) flags |= DT_CENTER; else if (align == 2) flags |= DT_RIGHT;
+            if (align == TextAlign.Center) flags |= DT_CENTER; else if (align == TextAlign.Right) flags |= DT_RIGHT;
             DrawTextW(Dc, s, s.Length, ref rc, flags);
         }
 

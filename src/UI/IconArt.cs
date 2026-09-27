@@ -5,19 +5,17 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Nibble
+namespace Nibble.UI
 {
+    enum TrayStyle { Mouse, Number, Battery, Tinted, Minimal }
+
     static class IconArt
     {
         [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr h);
 
-        // ---------- tray ----------
-        // Everything is drawn from Segoe Fluent Icons / hinted GDI text via Glyphs, like the shell's
-        // own tray icons, so it stays crisp at 16 px.
+        public static readonly string[] StyleNames = { "Mouse", "Number", "Battery", "Tinted", "Minimal" };
 
-        public static readonly string[] TrayStyles = { "Mouse", "Number", "Battery", "Tinted", "Minimal" };
-
-        public static Icon TrayIcon(int style, int size, int percent, bool charging, bool asleep, bool lightTaskbar)
+        public static Icon TrayIcon(TrayStyle style, int size, int percent, bool charging, bool asleep, bool lightTaskbar)
         {
             using (var bmp = TrayArt(style, size, percent, charging, asleep, lightTaskbar))
             {
@@ -28,54 +26,52 @@ namespace Nibble
             }
         }
 
-        // Also used at larger sizes for the style picker previews.
-        public static Bitmap TrayArt(int style, int s, int percent, bool charging, bool asleep, bool light)
+        // Tray glyphs come from Segoe Fluent Icons through hinted GDI (see Glyphs), like the shell's own tray
+        // icons, so they stay crisp at 16 px. Also drawn larger for the style picker.
+        public static Bitmap TrayArt(TrayStyle style, int s, int percent, bool charging, bool asleep, bool light)
         {
             Color fg = light ? Color.FromArgb(255, 20, 20, 22) : Color.White;
             Color green = light ? Theme.Hex(0x1E9E48) : Theme.Hex(0x30D158);
             Color red = light ? Theme.Hex(0xE0352B) : Theme.Hex(0xFF453A);
             Color amber = light ? Theme.Hex(0xC98A00) : Theme.Hex(0xFFB020);
             bool low = percent >= 0 && percent <= 20;
-            // Charging with no level to show: the outline itself turns green.
-            Color line = asleep ? Color.FromArgb(150, fg) : charging && percent < 0 ? green : fg;
-            Color state = asleep ? Color.FromArgb(150, fg) : charging ? green : low ? red : fg;
-            string mouse = Glyphs.Mouse.ToString();
+            Color dim = Color.FromArgb(150, fg);
+            Color state = asleep ? dim : charging ? green : low ? red : fg;
+            var mouse = Glyph(Glyphs.Mouse, s);
 
-            // Charging with the level hidden by the firmware: say "charging" without faking a level.
+            // Charging with the level hidden: show "charging" without faking a level.
             if (charging && percent < 0 && !asleep)
             {
-                if (style == 1) return SolidBolt(s, green);                                                                            // same bolt as Settings
-                if (style == 2) return Glyphs.Compose(s, Glyphs.Coverage(Glyphs.BatteryCharging0.ToString(), Glyphs.IconFace, s, s, 400, 0), green); // same battery family, bolt inside
-                return Glyphs.Compose(s, Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0), green);                          // green mouse
+                if (style == TrayStyle.Number) return SolidBolt(s, green);
+                if (style == TrayStyle.Battery) return Glyphs.Compose(s, Glyph(Glyphs.BatteryCharging0, s), green);
+                return Glyphs.Compose(s, mouse, green);
             }
 
             switch (style)
             {
-                case 1:
+                case TrayStyle.Number:
                 {
-                    string text = percent >= 0 ? percent.ToString() : "\u2013";
+                    string text = percent >= 0 ? percent.ToString() : "–";
                     int px = text.Length >= 3 ? (int)Math.Round(s * 0.78) : s + 1;
-                    return Glyphs.Compose(s, Glyphs.Coverage(text, Digits, s, px, 400, 0), state);
+                    return Glyphs.Compose(s, Glyphs.Coverage(text, Digits, s, px), state);
                 }
-                case 2:
+                case TrayStyle.Battery:
                 {
                     int step = Math.Max(0, Math.Min(10, (int)Math.Round(Math.Max(0, percent) / 10.0)));
                     char g = (char)((charging ? Glyphs.BatteryCharging0 : Glyphs.Battery0) + step);
-                    return Glyphs.Compose(s, Glyphs.Coverage(g.ToString(), Glyphs.IconFace, s, s, 400, 0), charging || low || asleep ? state : fg);
+                    return Glyphs.Compose(s, Glyph(g, s), charging || low || asleep ? state : fg);
                 }
-                case 3:
+                case TrayStyle.Tinted:
                 {
-                    Color tint = asleep ? line : charging || percent > 50 ? green : low ? red : amber;
-                    var cov = Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0);
-                    return Glyphs.Compose(s, Glyphs.Interior(cov, s), Color.FromArgb(asleep ? 60 : 110, tint), cov, tint);
+                    Color tint = asleep ? dim : charging || percent > 50 ? green : low ? red : amber;
+                    return Glyphs.Compose(s, Glyphs.Interior(mouse, s), Color.FromArgb(asleep ? 60 : 110, tint), mouse, tint);
                 }
-                case 4:
-                    return Glyphs.Compose(s, Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0), state);
+                case TrayStyle.Minimal:
+                    return Glyphs.Compose(s, mouse, state);
                 default:
                 {
-                    // The mouse fills from the bottom like a battery; fill follows the glyph's own interior.
-                    var cov = Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0);
-                    var inside = Glyphs.Interior(cov, s);
+                    // The mouse fills from the bottom like a battery, following the glyph's own interior.
+                    var inside = Glyphs.Interior(mouse, s);
                     int top = s, bottom = -1;
                     for (int i = 0; i < inside.Length; i++)
                         if (inside[i]) { int y = i / s; if (y < top) top = y; if (y > bottom) bottom = y; }
@@ -83,27 +79,24 @@ namespace Nibble
                     var level = new bool[s * s];
                     var empty = new bool[s * s];
                     for (int i = 0; i < inside.Length; i++) { level[i] = inside[i] && i / s >= cut; empty[i] = inside[i] && !level[i]; }
-                    // A coloured fill over a faint empty part, so it reads as a level rather than a solid mouse.
-                    Color fill = asleep ? Color.FromArgb(90, fg)
-                        : charging ? green
-                        : low ? red
-                        : percent <= 50 ? amber
-                        : green;
-                    return Glyphs.Compose(s, empty, Color.FromArgb(light ? 30 : 45, fg), level, fill, cov, line);
+                    Color fill = asleep ? Color.FromArgb(90, fg) : charging ? green : low ? red : percent <= 50 ? amber : green;
+                    return Glyphs.Compose(s, empty, Color.FromArgb(light ? 30 : 45, fg), level, fill, mouse, asleep ? dim : fg);
                 }
             }
         }
 
-        // The Settings bolt symbol, filled and centred in an s×s icon.
+        static byte[] Glyph(char c, int s) { return Glyphs.Coverage(c.ToString(), Glyphs.IconFace, s, s); }
+
         static Bitmap SolidBolt(int s, Color c)
         {
             var bmp = new Bitmap(s, s, PixelFormat.Format32bppArgb);
-            using (var g = Graphics.FromImage(bmp)) Icons.Fill(g, 1, new PointF(s / 2f, s / 2f), s - 1, c);
+            using (var g = Graphics.FromImage(bmp)) Icons.Fill(g, Symbol.Bolt, new PointF(s / 2f, s / 2f), s - 1, c);
             return bmp;
         }
 
         static string digits;
         static string Digits { get { return digits ?? (digits = Draw.PickFont("Bahnschrift SemiBold Condensed", "Bahnschrift", "Segoe UI Semibold")); } }
+
         // App icon: green squircle with a white mouse and a charge bolt.
         public static Bitmap AppArt(int s)
         {
