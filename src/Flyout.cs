@@ -35,7 +35,7 @@ namespace Nibble
         readonly TrayApp app;
         readonly float S;
         Theme th;
-        readonly Font fNum, fPct, fName, fSub, fTileVal, fTileCap, fTitle, fRow, fSeg, fBtn;
+        readonly Font fNum, fPct, fName, fSub, fTileVal, fTileCap, fTitle, fRow, fSeg, fBtn, fCharge;
         readonly StringFormat sfL, sfC, sfR;
 
         Bitmap backdrop;
@@ -74,7 +74,7 @@ namespace Nibble
             string disp = Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold");
             string text = Draw.PickFont("Segoe UI Variable Text", "Segoe UI");
             string textSb = Draw.PickFont("Segoe UI Variable Text Semibold", "Segoe UI Semibold");
-            fNum = PxFont(disp, 60); fPct = PxFont(disp, 26); fTitle = PxFont(disp, 18);
+            fNum = PxFont(disp, 60); fPct = PxFont(disp, 26); fTitle = PxFont(disp, 18); fCharge = PxFont(disp, 36);
             fName = PxFont(textSb, 15); fTileVal = PxFont(textSb, 15); fSeg = PxFont(textSb, 13); fBtn = PxFont(textSb, 15);
             fSub = PxFont(text, 13); fTileCap = PxFont(text, 12); fRow = PxFont(text, 15);
 
@@ -313,48 +313,53 @@ namespace Nibble
             // Battery ring with the mouse inside, like the iOS Batteries widget.
             float d = F(104), stroke = F(10), rx = F(22), ry = F(24);
             var rr = new RectangleF(rx + stroke / 2, ry + stroke / 2, d - stroke, d - stroke);
-            using (var p = new Pen(A(th.Track), stroke)) g.DrawEllipse(p, rr);
-            if (ring > 0.004f)
-                using (var p = new Pen(A(RingColor()), stroke))
-                {
-                    p.StartCap = p.EndCap = LineCap.Round;
-                    g.DrawArc(p, rr, -90, 360 * Math.Min(1, ring));
-                }
-            MouseGlyph(g, rx + d / 2, ry + d / 2, app.Online ? Draw.Alpha(th.Label, 0.9f) : th.Secondary);
-
-            // Headline number
             float x = F(148), w = F(PW - 148 - 20);
-            Txt(g, "RK M3", fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), sfL);
-            bool known = app.Percent >= 0;
-            if (app.Online && app.ChargeFromLast)
+            bool chargingUnknown = app.Online && app.ChargeFromLast;
+
+            if (chargingUnknown)
             {
-                // No real level while charging: a large bolt stands in for the number.
-                Draw.Bolt(g, A(th.Green), new RectangleF(x + F(2), F(52), F(32), F(50)));
-                known = false;
+                // The M3 hides its level while charging: a soft green ring with a bolt, and a
+                // "Charging" headline, instead of a number.
+                using (var p = new Pen(A(Draw.Alpha(th.Green, 0.35f)), stroke)) g.DrawEllipse(p, rr);
+                Draw.Bolt(g, A(th.Green), new RectangleF(rx + d / 2 - F(13), ry + d / 2 - F(20), F(26), F(40)));
+                Txt(g, "RK M3", fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), sfL);
+                Txt(g, "Charging", fCharge, th.Label, new RectangleF(x - F(2), F(52), w + F(10), F(46)), sfL);
+                Txt(g, app.Wired ? "Over USB cable" : "Plugged in", fSub, th.Green, new RectangleF(x, F(102), w, F(18)), sfL);
             }
             else
             {
-            string num = known ? ((int)Math.Round(ring * 100)).ToString() : "—";
-            SizeF ns = Measure(num, fNum);
-            var nr = new RectangleF(x - F(3), F(46), ns.Width + F(4), F(62));
-            Txt(g, num, fNum, app.Online ? th.Label : th.Secondary, nr, sfL);
-            if (known)
-            {
-                float baseline = nr.Y + nr.Height / 2 + Ascent(fNum) - LineH(fNum) / 2;
-                float top = baseline - Ascent(fPct);
-                Txt(g, "%", fPct, th.Secondary, new RectangleF(nr.X + ns.Width + F(2), top, F(30), LineH(fPct)), sfL);
-            }
-            }
+                using (var p = new Pen(A(th.Track), stroke)) g.DrawEllipse(p, rr);
+                if (ring > 0.004f)
+                    using (var p = new Pen(A(RingColor()), stroke))
+                    {
+                        p.StartCap = p.EndCap = LineCap.Round;
+                        g.DrawArc(p, rr, -90, 360 * Math.Min(1, ring));
+                    }
+                MouseGlyph(g, rx + d / 2, ry + d / 2, app.Online ? Draw.Alpha(th.Label, 0.9f) : th.Secondary);
 
-            // Status line
-            string status = HeroStatus();
-            Color sc = th.Secondary;
-            if (app.Online && (app.Charging || app.FullyCharged)) sc = th.Green;
-            else if (app.Online && known && app.Percent <= 20) sc = th.Red;
-            float sx = x;
-            if (app.Online && app.Charging) { Draw.Bolt(g, A(sc), new RectangleF(sx, F(114), F(9), F(14))); sx += F(14); }
-            Txt(g, status, fSub, sc, new RectangleF(sx, F(112), w - (sx - x), F(18)), sfL);
+                // Headline number
+                Txt(g, "RK M3", fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), sfL);
+                bool known = app.Percent >= 0;
+                string num = known ? ((int)Math.Round(ring * 100)).ToString() : "\u2014";
+                SizeF ns = Measure(num, fNum);
+                var nr = new RectangleF(x - F(3), F(46), ns.Width + F(4), F(62));
+                Txt(g, num, fNum, app.Online ? th.Label : th.Secondary, nr, sfL);
+                if (known)
+                {
+                    float baseline = nr.Y + nr.Height / 2 + Ascent(fNum) - LineH(fNum) / 2;
+                    float top = baseline - Ascent(fPct);
+                    Txt(g, "%", fPct, th.Secondary, new RectangleF(nr.X + ns.Width + F(2), top, F(30), LineH(fPct)), sfL);
+                }
 
+                // Status line
+                string status = HeroStatus();
+                Color sc = th.Secondary;
+                if (app.Online && (app.Charging || app.FullyCharged)) sc = th.Green;
+                else if (app.Online && known && app.Percent <= 20) sc = th.Red;
+                float sx = x;
+                if (app.Online && app.Charging) { Draw.Bolt(g, A(sc), new RectangleF(sx, F(114), F(9), F(14))); sx += F(14); }
+                Txt(g, status, fSub, sc, new RectangleF(sx, F(112), w - (sx - x), F(18)), sfL);
+            }
             // Three glass tiles
             float ty0 = F(150), tw = F((PW - 2 * Pad - 16) / 3f), th0 = F(74);
             for (int i = 0; i < 3; i++)

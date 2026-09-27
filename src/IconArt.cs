@@ -41,6 +41,14 @@ namespace Nibble
             Color state = asleep ? Color.FromArgb(150, fg) : charging ? green : low ? red : fg;
             string mouse = Glyphs.Mouse.ToString();
 
+            // Charging with the level hidden by the firmware: say "charging" without faking a level.
+            if (charging && percent < 0 && !asleep)
+            {
+                if (style == 1) return Glyphs.Compose(s, Glyphs.CenteredCoverage("\uE945", Glyphs.IconFace, s, s, 400), green);   // bolt
+                if (style == 2) return Glyphs.Compose(s, Glyphs.Coverage("\uE83E", Glyphs.IconFace, s, s, 400, 0), green);       // battery + plug
+                return Glyphs.Compose(s, Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0), green);                          // green mouse
+            }
+
             switch (style)
             {
                 case 1:
