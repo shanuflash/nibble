@@ -93,7 +93,7 @@ namespace Nibble
         // Design-review mode: renders the flyout with sample state, no tray or device access.
         public TrayApp(string snapshotPath, bool dark, int percent, bool charging, bool online, bool settings)
         {
-            Found = true; Online = online; Percent = percent; Charging = charging;
+            Found = true; Online = online; Percent = percent; Charging = charging; ChargeFromLast = charging && percent < 0;
             Config = SampleConfig(); Updated = DateTime.Now.AddSeconds(-4);
             fly = new Flyout(this);
             fly.Snapshot(snapshotPath, dark, settings);
