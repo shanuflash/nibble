@@ -120,7 +120,7 @@ namespace Nibble
             restX = wa.Right - Px(TW) - gap - Px(M);
             winY = wa.Bottom - Px(TH) - gap - Px(M);
             using (var cap = Glass.Capture(new Rectangle(restX + Px(M), winY + Px(M), Px(TW), Px(TH))))
-                backdrop = Glass.Frost(cap, new Size(Px(TW), Px(TH)), th.Tint, th.Fallback, 1.8f);
+                backdrop = Glass.Frost(cap, new Size(Px(TW), Px(TH)), Glass.AdaptiveTint(cap, th.Tint, th.Dark, 90, 175), th.Fallback, 1.8f);
             bgAvg = Glass.Average(backdrop);
             frame = new Surface(Size.Width, Size.Height);
             frame.SetMask(new RectangleF(F(M), F(M), F(TW), F(TH)), F(TR));

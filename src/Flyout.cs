@@ -154,7 +154,7 @@ namespace Nibble
         {
             FreeSurfaces();
             var panel = new Size(Px(PW), Px(PH));
-            backdrop = Glass.Frost(capture, panel, th.Tint, th.Fallback, 1.8f);
+            backdrop = Glass.Frost(capture, panel, Glass.AdaptiveTint(capture, th.Tint, th.Dark, 90, 175), th.Fallback, 1.8f);
             bgAvg = Glass.Average(backdrop);
             frame = new Surface(Size.Width, Size.Height);
             frame.SetMask(new RectangleF(F(M), F(M), F(PW), F(PH)), F(R));

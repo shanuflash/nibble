@@ -77,6 +77,18 @@ namespace Nibble
             return result;
         }
 
+        // Liquid Glass tint that adapts to what's behind: light where the backdrop already contrasts with the
+        // text, heavier only where it has to (e.g. dark glass over a bright window) to keep text legible.
+        public static Color AdaptiveTint(Bitmap capture, Color baseTint, bool dark, int minAlpha, int maxAlpha)
+        {
+            if (capture == null) return baseTint;
+            var avg = Average(capture);
+            float lum = (0.2126f * avg.R + 0.7152f * avg.G + 0.0722f * avg.B) / 255f;
+            float need = dark ? lum : 1 - lum;               // how much the backdrop fights the text colour
+            int a = (int)(minAlpha + (maxAlpha - minAlpha) * Math.Min(1f, need * 1.25f));
+            return Color.FromArgb(a, baseTint.R, baseTint.G, baseTint.B);
+        }
+
         // Mean color of an opaque bitmap; GDI text can't blend alpha, so translucent text colors
         // are flattened against this.
         public static Color Average(Bitmap source)

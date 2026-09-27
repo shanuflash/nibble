@@ -121,7 +121,7 @@ namespace Nibble
         void BuildGlass(Bitmap capture)
         {
             if (glass != null) glass.Dispose();
-            glass = Glass.Frost(capture, new Size(Pi(CW), Pi(CH)), CardColor(), th.Fallback, 1.6f);
+            glass = Glass.Frost(capture, new Size(Pi(CW), Pi(CH)), Glass.AdaptiveTint(capture, CardColor(), th.Dark, 130, 215), th.Fallback, 1.6f);
             cardFlat = Glass.Average(glass);
             sideFlat = Blend(cardFlat, SideColor());
         }
