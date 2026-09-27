@@ -44,8 +44,8 @@ namespace Nibble
             // Charging with the level hidden by the firmware: say "charging" without faking a level.
             if (charging && percent < 0 && !asleep)
             {
-                if (style == 1) return Glyphs.Compose(s, Glyphs.CenteredCoverage("\uE945", Glyphs.IconFace, s, s, 400), green);   // bolt
-                if (style == 2) return Glyphs.Compose(s, Glyphs.Coverage("\uE83E", Glyphs.IconFace, s, s, 400, 0), green);       // battery + plug
+                if (style == 1) return SolidBolt(s, green);                                                                            // same bolt as Settings
+                if (style == 2) return Glyphs.Compose(s, Glyphs.Coverage(Glyphs.BatteryCharging0.ToString(), Glyphs.IconFace, s, s, 400, 0), green); // same battery family, bolt inside
                 return Glyphs.Compose(s, Glyphs.Coverage(mouse, Glyphs.IconFace, s, s, 400, 0), green);                          // green mouse
             }
 
@@ -92,6 +92,14 @@ namespace Nibble
                     return Glyphs.Compose(s, empty, Color.FromArgb(light ? 30 : 45, fg), level, fill, cov, line);
                 }
             }
+        }
+
+        // The Settings bolt symbol, filled and centred in an s×s icon.
+        static Bitmap SolidBolt(int s, Color c)
+        {
+            var bmp = new Bitmap(s, s, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(bmp)) Icons.Fill(g, 1, new PointF(s / 2f, s / 2f), s - 1, c);
+            return bmp;
         }
 
         static string digits;

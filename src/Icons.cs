@@ -24,6 +24,29 @@ namespace Nibble
             return p;
         }
 
+        // Fills symbol `page` with its geometric centre on `center` and its longest side `ink` px.
+        public static void Fill(Graphics g, int page, PointF center, float ink, Color c)
+        {
+            var parts = Parts(page);
+            var b = parts[0].GetBounds();
+            foreach (var part in parts) b = RectangleF.Union(b, part.GetBounds());
+            float k = ink / System.Math.Max(b.Width, b.Height);
+            var mode = g.PixelOffsetMode;
+            var smooth = g.SmoothingMode;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var m = new Matrix())
+            using (var brush = new SolidBrush(c))
+            {
+                m.Translate(center.X, center.Y);
+                m.Scale(k, k);
+                m.Translate(-(b.X + b.Width / 2), -(b.Y + b.Height / 2));
+                foreach (var part in parts) { part.Transform(m); g.FillPath(brush, part); part.Dispose(); }
+            }
+            g.PixelOffsetMode = mode;
+            g.SmoothingMode = smooth;
+        }
+
         static void Add(List<GraphicsPath> parts, System.Action<GraphicsPath> build)
         {
             var g = new GraphicsPath();

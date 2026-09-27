@@ -30,6 +30,7 @@ namespace Nibble
         public int TrayStyle;              // index into IconArt.TrayStyles
 
         public int Appearance;             // 0 = follow Windows, 1 = light, 2 = dark
+        public static bool SnapshotCharging;   // design review: render the charging state
 
         public void SetTrayStyle(int style)
         {
@@ -102,7 +103,8 @@ namespace Nibble
         // Design-review mode for the full-screen settings: Nibble.exe --snapshot-settings out.png dark|light page
         public TrayApp(string snapshotPath, bool dark, int page)
         {
-            Found = true; Online = true; Percent = 55;
+            Found = true; Online = true; Percent = SnapshotCharging ? -1 : 55;
+            Charging = ChargeFromLast = SnapshotCharging;
             Config = SampleConfig(); Updated = DateTime.Now;
             using (var w = new SettingsWindow(this)) w.Snapshot(snapshotPath, dark, page);
         }

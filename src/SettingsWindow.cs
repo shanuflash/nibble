@@ -301,19 +301,33 @@ namespace Nibble
         }
 
         // Battery ring around the mouse glyph + name/status, shared by the sidebar styles.
-        void DeviceBadge(Graphics g, RectangleF box, Color under, bool compactText, float textX, float textW)
+        // Battery ring shared by the sidebar card and the Power page, matching the flyout: level arc, or a
+        // soft green ring with a bolt while charging hides the level. `mouseInside` puts the mouse in the middle.
+        void BatteryRing(Graphics g, RectangleF box, float rs, bool mouseInside)
         {
-            float rs = Math.Max(2.5f, box.Width * 0.08f);
             var rr = RectangleF.Inflate(box, -rs / 2, -rs / 2);
-            using (var p = new Pen(th.Track, rs)) g.DrawEllipse(p, rr);
+            var center = new PointF(box.X + box.Width / 2, box.Y + box.Height / 2);
+            if (app.Online && app.ChargeFromLast)
+            {
+                using (var p = new Pen(Av(Draw.Alpha(th.Green, 0.35f)), rs)) g.DrawEllipse(p, rr);
+                DrawIcon(g, 1, center, box.Width * 0.44f, th.Green);
+                return;
+            }
+            using (var p = new Pen(Av(th.Track), rs)) g.DrawEllipse(p, rr);
             if (app.Percent > 0)
-                using (var p = new Pen(!app.Online ? th.Tertiary : app.Percent <= 20 && !app.Charging ? th.Red : th.Green, rs))
+                using (var p = new Pen(Av(!app.Online ? th.Tertiary : app.Percent <= 20 && !app.Charging ? th.Red : th.Green), rs))
                 {
                     p.StartCap = p.EndCap = LineCap.Round;
                     g.DrawArc(p, rr, -90, 3.6f * app.Percent);
                 }
-            // Same custom mouse as the Device tile, centred on the ring's exact centre (no pixel truncation).
-            DrawIcon(g, 4, new PointF(box.X + box.Width / 2, box.Y + box.Height / 2), box.Width * 0.46f, app.Online ? th.Label : th.Secondary);
+            if (mouseInside)
+                DrawIcon(g, 4, center, box.Width * 0.46f, app.Online ? th.Label : th.Secondary);
+        }
+
+        void DeviceBadge(Graphics g, RectangleF box, Color under, bool compactText, float textX, float textW)
+        {
+            float rs = Math.Max(2.5f, box.Width * 0.08f);
+            BatteryRing(g, box, rs, true);
             string sub = !app.Found ? "Receiver not found"
                 : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
                 : app.Percent < 0 ? (app.Charging ? "Charging" : "Connected") : string.Format("{0} · {1}", app.PercentText, app.FullyCharged ? "charged" : app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
@@ -444,25 +458,7 @@ namespace Nibble
 
         readonly Dictionary<string, Bitmap> iconCache = new Dictionary<string, Bitmap>();
 
-        // Draws a page symbol directly, its geometric centre on `center`, longest side `ink` px.
-        void DrawIcon(Graphics g, int i, PointF center, float ink, Color c)
-        {
-            var parts = Icons.Parts(i);
-            var b = parts[0].GetBounds();
-            foreach (var part in parts) b = RectangleF.Union(b, part.GetBounds());
-            float k = ink / Math.Max(b.Width, b.Height);
-            var mode = g.PixelOffsetMode;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            using (var m = new Matrix())
-            using (var brush = new SolidBrush(Av(c)))
-            {
-                m.Translate(center.X, center.Y);
-                m.Scale(k, k);
-                m.Translate(-(b.X + b.Width / 2), -(b.Y + b.Height / 2));
-                foreach (var part in parts) { part.Transform(m); g.FillPath(brush, part); part.Dispose(); }
-            }
-            g.PixelOffsetMode = mode;
-        }
+        void DrawIcon(Graphics g, int i, PointF center, float ink, Color c) { Icons.Fill(g, i, center, ink, Av(c)); }
 
         // Page icons: custom symbols on a 24-unit grid (bold 2-unit strokes, filled where it reads better).
         // Each is one path, scaled to the same ink size and centred on its true geometric bounds.
@@ -756,17 +752,13 @@ namespace Nibble
             Platter(g, hero);
             var pf = PlatterFlat();
             float d = F(72), stroke = F(8);
-            var rr = new RectangleF(hero.X + F(22) + stroke / 2, hero.Y + (hero.Height - d) / 2 + stroke / 2, d - stroke, d - stroke);
-            using (var p = new Pen(Av(th.Track), stroke)) g.DrawEllipse(p, rr);
-            if (app.Percent > 0)
-                using (var p = new Pen(Av(!app.Online ? th.Tertiary : app.Percent <= 20 && !app.Charging ? th.Red : th.Green), stroke))
-                {
-                    p.StartCap = p.EndCap = LineCap.Round;
-                    g.DrawArc(p, rr, -90, 3.6f * app.Percent);
-                }
-            Txt(g, app.Percent >= 0 ? app.PercentText : "—", fBig, th.Label, pf, new RectangleF(hero.X + F(114), hero.Y + F(16), F(200), F(34)), 0);
-            string status = !app.Found ? "Receiver not connected" : !app.Online ? "Asleep" : app.StatusText();
-            Txt(g, status + (app.Online ? (app.Wired ? " · USB cable" : " · 2.4 GHz") : ""), fSub, app.Charging || app.FullyCharged ? th.Green : th.Secondary, pf,
+            BatteryRing(g, new RectangleF(hero.X + F(22), hero.Y + (hero.Height - d) / 2, d, d), stroke, false);
+            bool chargingUnknown = app.Online && app.ChargeFromLast;
+            Txt(g, app.Percent >= 0 ? app.PercentText : chargingUnknown ? "Charging" : "—", fBig, th.Label, pf, new RectangleF(hero.X + F(114), hero.Y + F(16), F(200), F(34)), 0);
+            string status = !app.Found ? "Receiver not connected" : !app.Online ? "Asleep"
+                : chargingUnknown ? (app.Wired ? "Over USB cable" : "Plugged in")
+                : app.StatusText() + (app.Wired ? " · USB cable" : " · 2.4 GHz");
+            Txt(g, status, fSub, app.Charging || app.FullyCharged ? th.Green : th.Secondary, pf,
                 new RectangleF(hero.X + F(116), hero.Y + F(52), F(300), F(18)), 0);
             y = hero.Bottom + F(14);
 

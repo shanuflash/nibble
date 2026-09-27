@@ -321,7 +321,7 @@ namespace Nibble
                 // The M3 hides its level while charging: a soft green ring with a bolt, and a
                 // "Charging" headline, instead of a number.
                 using (var p = new Pen(A(Draw.Alpha(th.Green, 0.35f)), stroke)) g.DrawEllipse(p, rr);
-                Draw.Bolt(g, A(th.Green), new RectangleF(rx + d / 2 - F(13), ry + d / 2 - F(20), F(26), F(40)));
+                Icons.Fill(g, 1, new PointF(rx + d / 2, ry + d / 2), F(44), A(th.Green));   // same bolt as Settings and the tray
                 Txt(g, "RK M3", fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), sfL);
                 Txt(g, "Charging", fCharge, th.Label, new RectangleF(x - F(2), F(52), w + F(10), F(46)), sfL);
                 Txt(g, app.Wired ? "Over USB cable" : "Plugged in", fSub, th.Green, new RectangleF(x, F(102), w, F(18)), sfL);

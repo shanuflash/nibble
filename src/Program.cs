@@ -37,7 +37,8 @@ namespace Nibble
             if (args.Length >= 4 && args[0] == "--snapshot-settings")
             {
                 SetProcessDPIAware();
-                if (args.Length >= 5) SettingsWindow.SideStyle = int.Parse(args[4]);
+                TrayApp.SnapshotCharging = Array.IndexOf(args, "charging") >= 0;
+                int side; if (args.Length >= 5 && int.TryParse(args[4], out side)) SettingsWindow.SideStyle = side;
                 new TrayApp(args[1], args[2] == "dark", int.Parse(args[3]));
                 return;
             }
