@@ -340,7 +340,7 @@ namespace Nibble
             // Status line
             string status = HeroStatus();
             Color sc = th.Secondary;
-            if (app.Online && app.Charging) sc = th.Green;
+            if (app.Online && (app.Charging || app.FullyCharged)) sc = th.Green;
             else if (app.Online && known && app.Percent <= 20) sc = th.Red;
             float sx = x;
             if (app.Online && app.Charging) { Draw.Bolt(g, A(sc), new RectangleF(sx, F(114), F(9), F(14))); sx += F(14); }

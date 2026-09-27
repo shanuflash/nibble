@@ -316,7 +316,7 @@ namespace Nibble
             DrawIcon(g, 4, new PointF(box.X + box.Width / 2, box.Y + box.Height / 2), box.Width * 0.46f, app.Online ? th.Label : th.Secondary);
             string sub = !app.Found ? "Receiver not found"
                 : !app.Online ? (app.Percent >= 0 ? app.Percent + "% · asleep" : "Asleep")
-                : string.Format("{0}% · {1}", app.Percent, app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
+                : string.Format("{0} · {1}", app.PercentText, app.FullyCharged ? "charged" : app.Charging ? "charging" : app.Wired ? "USB" : "2.4 GHz");
             float cy = box.Y + box.Height / 2;
             Txt(g, "RK M3", compactText ? fSemi : fHead, th.Label, under, new RectangleF(textX, cy - F(19), textW, F(20)), 0);
             Txt(g, sub, fSub, th.Secondary, under, new RectangleF(textX, cy + F(1), textW, F(18)), 0);
@@ -764,9 +764,9 @@ namespace Nibble
                     p.StartCap = p.EndCap = LineCap.Round;
                     g.DrawArc(p, rr, -90, 3.6f * app.Percent);
                 }
-            Txt(g, app.Percent >= 0 ? app.Percent + "%" : "—", fBig, th.Label, pf, new RectangleF(hero.X + F(114), hero.Y + F(16), F(200), F(34)), 0);
-            string status = !app.Found ? "Receiver not connected" : !app.Online ? "Asleep" : app.Charging ? "Charging" : app.StatusText();
-            Txt(g, status + (app.Online ? (app.Wired ? " · USB cable" : " · 2.4 GHz") : ""), fSub, app.Charging ? th.Green : th.Secondary, pf,
+            Txt(g, app.Percent >= 0 ? app.PercentText : "—", fBig, th.Label, pf, new RectangleF(hero.X + F(114), hero.Y + F(16), F(200), F(34)), 0);
+            string status = !app.Found ? "Receiver not connected" : !app.Online ? "Asleep" : app.StatusText();
+            Txt(g, status + (app.Online ? (app.Wired ? " · USB cable" : " · 2.4 GHz") : ""), fSub, app.Charging || app.FullyCharged ? th.Green : th.Secondary, pf,
                 new RectangleF(hero.X + F(116), hero.Y + F(52), F(300), F(18)), 0);
             y = hero.Bottom + F(14);
 

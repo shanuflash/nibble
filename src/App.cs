@@ -246,9 +246,8 @@ namespace Nibble
             Online = r.Online;
             if (r.Online)
             {
-                Percent = r.Percent;
-                Charging = r.Charging;
                 Wired = r.Wired;
+                SetBattery(r.Percent, r.Charging);
                 if (r.Config != null && !Saving) Config = r.Config;   // don't clobber an edit in flight
                 Updated = DateTime.Now;
             }
@@ -291,8 +290,7 @@ namespace Nibble
             {
                 case RkM3.EvtBattery:
                     if ((value & 0x7F) > 100) return;
-                    Percent = value & 0x7F;
-                    Charging = (value & 0x80) != 0;
+                    SetBattery(value & 0x7F, (value & 0x80) != 0);
                     Found = Online = true;
                     Updated = DateTime.Now;
                     break;
@@ -338,11 +336,63 @@ namespace Nibble
 
         // ---------- alerts ----------
 
+        // ---------- charging ----------
+        // While charging, the M3 reports a flat "100" (0xE4) instead of its real level. Nibble shows an
+        // estimate instead: the last real reading before the cable went in, plus elapsed time at a charge
+        // rate learned from previous full charges. When the firmware clears the charging bit at 100 while
+        // still wired, the charge is done.
+
+        public bool ChargeEstimated, FullyCharged;
+        public string PercentText { get { return (ChargeEstimated ? "~" : "") + Percent + "%"; } }
+        int lastRealPercent = -1;           // last level read while not charging
+        DateTime chargeStart = DateTime.MinValue;
+        int chargeStartPercent = -1;
+        double chargeRate = 1.0;            // %/min; refined after each full charge
+
+        void SetBattery(int raw, bool charging)
+        {
+            bool placeholder = charging && raw >= 100;
+            if (charging && chargeStart == DateTime.MinValue)
+            {
+                chargeStart = DateTime.Now;
+                chargeStartPercent = lastRealPercent >= 0 ? lastRealPercent : (raw < 100 ? raw : 50);
+            }
+            bool wasCharging = Charging;
+            Charging = charging;
+            FullyCharged = !charging && raw >= 100 && Wired;
+
+            if (placeholder)
+            {
+                double minutes = (DateTime.Now - chargeStart).TotalMinutes;
+                Percent = (int)Math.Min(99, chargeStartPercent + chargeRate * minutes);
+                ChargeEstimated = true;
+            }
+            else
+            {
+                Percent = raw;
+                ChargeEstimated = false;
+                if (!charging) lastRealPercent = raw;
+            }
+
+            if (!charging && chargeStart != DateTime.MinValue)
+            {
+                // Charge finished at 100: learn how fast this mouse charges (ignore short top-ups).
+                double minutes = (DateTime.Now - chargeStart).TotalMinutes;
+                if (wasCharging && raw >= 100 && minutes >= 10 && chargeStartPercent < 90)
+                {
+                    double measured = (100 - chargeStartPercent) / minutes;
+                    chargeRate = Math.Max(0.2, Math.Min(5, chargeRate * 0.5 + measured * 0.5));
+                    SaveSettings();
+                }
+                chargeStart = DateTime.MinValue;
+            }
+        }
+
         void CheckAlerts()
         {
             if (!Online || Percent < 0) return;
             if (Charging || Percent > 25) lowWarned = false;
-            if (!Charging) fullWarned = false;
+            if (!FullyCharged) fullWarned = false;
 
             if (LowAlert && !Charging && Percent <= 20 && !lowWarned)
             {
@@ -350,7 +400,7 @@ namespace Nibble
                 tray.ShowBalloonTip(6000, "Mouse battery low",
                     string.Format("RK M3 is at {0}%. Plug it in soon.", Percent), ToolTipIcon.Warning);
             }
-            if (LowAlert && Charging && Percent >= 100 && !fullWarned)
+            if (LowAlert && FullyCharged && !fullWarned)
             {
                 fullWarned = true;
                 tray.ShowBalloonTip(5000, "Fully charged", "RK M3 is at 100%. You can unplug it.", ToolTipIcon.Info);
@@ -363,7 +413,8 @@ namespace Nibble
         {
             if (!Found) return "Receiver not found";
             if (!Online) return "Mouse asleep";
-            if (Charging) return Percent >= 100 ? "Fully charged" : "Charging";
+            if (FullyCharged) return "Fully charged";
+            if (Charging) return ChargeEstimated ? "Charging · estimated" : "Charging";
             if (Percent <= 20) return "Low battery";
             return "On battery";
         }
@@ -379,7 +430,7 @@ namespace Nibble
             if (old != null) old.Dispose();
 
             string tip = Percent >= 0 && Found
-                ? string.Format("RK M3 \u00B7 {0}% \u00B7 {1}", Percent, StatusText())
+                ? string.Format("RK M3 \u00B7 {0} \u00B7 {1}", PercentText, StatusText())
                 : "RK M3 \u00B7 " + StatusText();
             tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
         }
@@ -434,7 +485,10 @@ namespace Nibble
                     if (v is int && (int)v >= 0 && (int)v <= 2) { Appearance = (int)v; Theme.Override = Appearance; }
                     // Last known level, so a sleeping mouse still shows (dimmed) after a restart.
                     v = k.GetValue("LastPercent");
-                    if (v is int && (int)v >= 0 && (int)v <= 100) { Percent = (int)v; savedPercent = Percent; }
+                    if (v is int && (int)v >= 0 && (int)v <= 100) { Percent = lastRealPercent = (int)v; savedPercent = Percent; }
+                    double rate;
+                    if (double.TryParse(k.GetValue("ChargeRate") as string, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out rate) && rate > 0)
+                        chargeRate = rate;
                 }
             }
             catch { }
@@ -444,7 +498,7 @@ namespace Nibble
 
         void SaveLastPercent()
         {
-            if (Percent < 0 || Percent == savedPercent) return;
+            if (Percent < 0 || Charging || Percent == savedPercent) return;   // never persist charging estimates
             savedPercent = Percent;
             try { using (var k = Registry.CurrentUser.CreateSubKey(SettingsKey)) k.SetValue("LastPercent", Percent, RegistryValueKind.DWord); }
             catch { }
@@ -459,6 +513,7 @@ namespace Nibble
                     k.SetValue("IntervalSec", IntervalSec, RegistryValueKind.DWord);
                     k.SetValue("LowAlert", LowAlert ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TrayStyle", TrayStyle, RegistryValueKind.DWord);
+                    k.SetValue("ChargeRate", chargeRate.ToString("R", System.Globalization.CultureInfo.InvariantCulture), RegistryValueKind.String);
                     k.SetValue("Appearance", Appearance, RegistryValueKind.DWord);
                 }
             }
