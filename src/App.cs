@@ -337,64 +337,28 @@ namespace Nibble
         // ---------- alerts ----------
 
         // ---------- charging ----------
-        // While charging, the M3 reports a flat "100" (0xE4) instead of its real level. Nibble shows an
-        // estimate instead: the last real reading before the cable went in, plus elapsed time at a charge
-        // rate learned from previous full charges. When the firmware clears the charging bit at 100 while
-        // still wired, the charge is done.
+        // While charging, the M3 reports a flat "100" (0xE4) instead of its real level, so Nibble keeps
+        // showing the last real reading from before the cable went in. When the firmware clears the
+        // charging bit at 100 while still wired, the charge is done.
 
-        public bool ChargeEstimated, FullyCharged;
-        public bool ChargeFromLast;         // charging, showing the last real reading (no rate learned yet)
-        bool rateLearned;                   // a full charge has been measured
-        public string PercentText { get { return (ChargeEstimated ? "~" : "") + Percent + "%"; } }
+        public bool FullyCharged;
+        public bool ChargeFromLast;         // charging: Percent is the last real reading, not live
+        public string PercentText { get { return Percent + "%"; } }
         int lastRealPercent = -1;           // last level read while not charging
-        DateTime chargeStart = DateTime.MinValue;
-        int chargeStartPercent = -1;
-        double chargeRate = 0.15;           // %/min placeholder; unused until a full charge is measured
 
         void SetBattery(int raw, bool charging)
         {
-            bool placeholder = charging && raw >= 100;
-            if (charging && chargeStart == DateTime.MinValue)
-            {
-                chargeStart = DateTime.Now;
-                chargeStartPercent = lastRealPercent >= 0 ? lastRealPercent : (raw < 100 ? raw : 50);
-            }
-            bool wasCharging = Charging;
             Charging = charging;
             FullyCharged = !charging && raw >= 100 && Wired;
-
-            if (placeholder)
-            {
-                // Only estimate once a real charge rate has been measured; otherwise keep showing the last
-                // real reading (labelled as such) rather than a made-up number.
-                double minutes = (DateTime.Now - chargeStart).TotalMinutes;
-                Percent = rateLearned ? (int)Math.Min(99, chargeStartPercent + chargeRate * minutes) : chargeStartPercent;
-                ChargeEstimated = rateLearned;
-                ChargeFromLast = !rateLearned;
-            }
+            ChargeFromLast = charging && raw >= 100;
+            if (ChargeFromLast)
+                Percent = lastRealPercent;
             else
             {
                 Percent = raw;
-                ChargeEstimated = ChargeFromLast = false;
                 if (!charging) lastRealPercent = raw;
             }
-
-            if (!charging && chargeStart != DateTime.MinValue)
-            {
-                // Charge finished at 100: learn how fast this mouse charges (ignore short top-ups).
-                double minutes = (DateTime.Now - chargeStart).TotalMinutes;
-                if (wasCharging && raw >= 100 && minutes >= 10 && chargeStartPercent < 90)
-                {
-                    double measured = (100 - chargeStartPercent) / minutes;
-                    // First measurement replaces the placeholder rate outright; later ones are blended in.
-                    chargeRate = Math.Max(0.02, Math.Min(5, rateLearned ? chargeRate * 0.5 + measured * 0.5 : measured));
-                    rateLearned = true;
-                    SaveSettings();
-                }
-                chargeStart = DateTime.MinValue;
-            }
         }
-
         void CheckAlerts()
         {
             if (!Online || Percent < 0) return;
@@ -421,7 +385,7 @@ namespace Nibble
             if (!Found) return "Receiver not found";
             if (!Online) return "Mouse asleep";
             if (FullyCharged) return "Fully charged";
-            if (Charging) return ChargeEstimated ? "Charging · estimated" : ChargeFromLast ? "Charging · last reading" : "Charging";
+            if (Charging) return ChargeFromLast && Percent >= 0 ? "Charging · last reading" : "Charging";
             if (Percent <= 20) return "Low battery";
             return "On battery";
         }
@@ -493,9 +457,6 @@ namespace Nibble
                     // Last known level, so a sleeping mouse still shows (dimmed) after a restart.
                     v = k.GetValue("LastPercent");
                     if (v is int && (int)v >= 0 && (int)v <= 100) { Percent = lastRealPercent = (int)v; savedPercent = Percent; }
-                    double rate;
-                    if (double.TryParse(k.GetValue("ChargeRate") as string, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out rate) && rate > 0)
-                    { chargeRate = rate; rateLearned = true; }
                 }
             }
             catch { }
@@ -520,7 +481,6 @@ namespace Nibble
                     k.SetValue("IntervalSec", IntervalSec, RegistryValueKind.DWord);
                     k.SetValue("LowAlert", LowAlert ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TrayStyle", TrayStyle, RegistryValueKind.DWord);
-                    if (rateLearned) k.SetValue("ChargeRate", chargeRate.ToString("R", System.Globalization.CultureInfo.InvariantCulture), RegistryValueKind.String);
                     k.SetValue("Appearance", Appearance, RegistryValueKind.DWord);
                 }
             }
