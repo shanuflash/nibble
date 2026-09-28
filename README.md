@@ -66,17 +66,17 @@ To update, run a newer version. To uninstall, go to Settings → Apps.
 
 Nibble isn't code-signed, so Windows may say it doesn't recognise the app. Click **More info**, then **Run anyway**.
 
-## Build
-
-Run `build.cmd`. It uses the C# compiler that comes with Windows, so there's nothing to install, and writes `bin\Nibble.exe`.
-
-## Adding a mouse
-
-Each mouse is one driver in `src/Devices`. Implement `IMouse`, list what the mouse supports in `MouseCaps`, and add it to `Drivers.All`. The settings pages only show what the mouse supports.
-
 ## Privacy
 
 Nibble only goes online when you open two settings pages. Device checks RK's server for firmware updates, and General checks GitHub for new versions of Nibble. Nothing about you or your mouse is sent.
+
+## Contributing
+
+Issues and pull requests are welcome. For a bug, include your mouse model, your Windows version, and what Nibble showed.
+
+Run `build.cmd` to build. It uses the C# compiler that comes with Windows, so there's nothing to install, and writes `bin\Nibble.exe`. That compiler only supports C# 5, so keep to that.
+
+To add a mouse, write a driver in `src/Devices`: implement `IMouse`, list what the mouse supports in `MouseCaps`, and add it to `Drivers.All`. The settings pages only show what the mouse supports. For another RK model, `RkLink` probably already speaks its protocol.
 
 ## License
 
