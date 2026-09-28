@@ -6,12 +6,14 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
   <img src="docs/screenshots/settings-general.png" width="760" alt="Settings window, General page with the tray icon styles">
 </p>
 <p align="center">
-  <img src="docs/screenshots/flyout-dark.png" width="250" alt="Tray flyout in dark mode">
-  <img src="docs/screenshots/flyout-charging.png" width="250" alt="Tray flyout while charging">
-  <img src="docs/screenshots/flyout-full.png" width="250" alt="Tray flyout when fully charged">
+  <img src="docs/screenshots/flyout.png" width="370" alt="Tray flyout">
+  <img src="docs/screenshots/flyout-charging.png" width="370" alt="Tray flyout while charging">
 </p>
 <p align="center">
-  <img src="docs/screenshots/notification.png" width="380" alt="Low battery notification">
+  <img src="docs/screenshots/notification-low.png" width="370" alt="Low battery notification">
+  <img src="docs/screenshots/notification-full.png" width="370" alt="Fully charged notification">
+</p>
+<p align="center">
   <img src="docs/screenshots/dpi-popup.png" width="290" alt="On-screen DPI popup">
 </p>
 
@@ -20,7 +22,7 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
 
 <p align="center">
   <img src="docs/screenshots/settings-performance.png" width="760" alt="Performance settings">
-  <img src="docs/screenshots/settings-power.png" width="760" alt="Power settings, light mode">
+  <img src="docs/screenshots/settings-power.png" width="760" alt="Power settings">
   <img src="docs/screenshots/settings-dpi.png" width="760" alt="DPI settings">
   <img src="docs/screenshots/install.png" width="380" alt="Install card">
 </p>
