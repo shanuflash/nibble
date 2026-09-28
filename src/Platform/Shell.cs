@@ -39,24 +39,29 @@ namespace Nibble.Platform
         }
 
         // Windows 11 puts new tray icons in the overflow. Promote ours once, unless the user already chose.
-        public static void PromoteTrayIcon(string exePath)
+        // True if it changed anything; Explorer only reads the setting when the icon is (re-)added.
+        public static bool PromoteTrayIcon(string exePath)
         {
+            bool changed = false;
             try
             {
                 using (var root = Registry.CurrentUser.OpenSubKey(@"Control Panel\NotifyIconSettings"))
                 {
-                    if (root == null) return;
+                    if (root == null) return false;
                     foreach (var name in root.GetSubKeyNames())
                         using (var k = root.OpenSubKey(name, true))
                         {
                             if (k == null) continue;
                             var exe = k.GetValue("ExecutablePath") as string;
                             if (!string.Equals(exe, exePath, StringComparison.OrdinalIgnoreCase)) continue;
-                            if (k.GetValue("IsPromoted") == null) k.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
+                            if (k.GetValue("IsPromoted") != null) continue;
+                            k.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
+                            changed = true;
                         }
                 }
             }
             catch { }
+            return changed;
         }
 
         // Windows only lets the foreground process hand focus on. Call this before starting or signalling

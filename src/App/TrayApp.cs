@@ -49,7 +49,7 @@ namespace Nibble
             UpdateIcon();
             tray.Visible = true;
 
-            After(3000, delegate { Shell.PromoteTrayIcon(Application.ExecutablePath); });
+            After(3000, PromoteTrayIcon);
             instance.Listen(ui, flyout.ShowFlyout, Quit);
             SystemEvents.PowerModeChanged += OnPower;
             SystemEvents.UserPreferenceChanged += OnSystemPrefs;
@@ -122,6 +122,13 @@ namespace Nibble
             tray.Dispose();
             flyout.Close();
             ExitThread();
+        }
+
+        void PromoteTrayIcon()
+        {
+            if (!Shell.PromoteTrayIcon(Application.ExecutablePath)) return;
+            tray.Visible = false;   // re-add so Explorer applies the pin now
+            tray.Visible = true;
         }
 
         void OnStatusRead(object sender, EventArgs e)
