@@ -1,3 +1,4 @@
+using System;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using Nibble.UI;
@@ -77,36 +78,75 @@ namespace Nibble
         static void Write(RegistryKey k, string name, int value) { k.SetValue(name, value, RegistryValueKind.DWord); }
     }
 
+    // Launch at login: a value under HKCU\...\Run, plus its entry under Explorer's StartupApproved key.
+    // Windows skips Run values without an "enabled" approval, and Task Manager's toggle lives there too.
     static class AutoStart
     {
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        const string ApprovedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+
+        // First byte even = enabled (02), odd = disabled by the user (03). The rest is a timestamp, zero is fine.
+        static readonly byte[] Approved = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         public static bool Enabled
         {
-            get
-            {
-                try
-                {
-                    using (var k = Registry.CurrentUser.OpenSubKey(RunKey))
-                    {
-                        var v = k == null ? null : k.GetValue(AppInfo.Name) as string;
-                        return v != null && v.Trim('"').Equals(Application.ExecutablePath, System.StringComparison.OrdinalIgnoreCase);
-                    }
-                }
-                catch { return false; }
-            }
+            get { return Registered() && Approval() != Disabled; }
             set
             {
                 try
                 {
-                    using (var k = Registry.CurrentUser.CreateSubKey(RunKey))
+                    using (var run = Registry.CurrentUser.CreateSubKey(RunKey))
+                    using (var ok = Registry.CurrentUser.CreateSubKey(ApprovedKey))
                     {
-                        if (value) k.SetValue(AppInfo.Name, "\"" + Application.ExecutablePath + "\"");
-                        else k.DeleteValue(AppInfo.Name, false);
+                        if (value)
+                        {
+                            run.SetValue(AppInfo.Name, "\"" + Application.ExecutablePath + "\"");
+                            ok.SetValue(AppInfo.Name, Approved, RegistryValueKind.Binary);
+                        }
+                        else
+                        {
+                            run.DeleteValue(AppInfo.Name, false);
+                            ok.DeleteValue(AppInfo.Name, false);
+                        }
                     }
                 }
                 catch { }
             }
+        }
+
+        // Older builds wrote the Run value without an approval, so Windows never launched them.
+        public static void Repair()
+        {
+            if (Registered() && Approval() == Missing) Enabled = true;
+        }
+
+        const int Missing = 0, On = 1, Disabled = 2;
+
+        static bool Registered()
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(RunKey))
+                {
+                    var v = k == null ? null : k.GetValue(AppInfo.Name) as string;
+                    return v != null && v.Trim('"').Equals(Application.ExecutablePath, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch { return false; }
+        }
+
+        static int Approval()
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(ApprovedKey))
+                {
+                    var b = k == null ? null : k.GetValue(AppInfo.Name) as byte[];
+                    if (b == null || b.Length == 0) return Missing;
+                    return (b[0] & 1) == 0 ? On : Disabled;
+                }
+            }
+            catch { return Missing; }
         }
     }
 }
