@@ -14,7 +14,12 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
 
 ## Install
 
-Download `Nibble.exe` from [Releases](https://github.com/shanuflash/nibble/releases), put it anywhere, and run it. Turn on **Launch at login** in Settings → General. Nibble checks for its own updates on the same page.
+Download `Nibble.exe` from [Releases](https://github.com/shanuflash/nibble/releases) and run it. It offers to install itself:
+
+- **Install** copies it to `%LOCALAPPDATA%\Programs\Nibble`, adds it to the Start menu and to Settings → Apps, and optionally launches it at login. No admin rights needed.
+- **Just run it** keeps it portable, running from wherever it is.
+
+To update, download the new version and run it; it replaces the installed one and keeps your settings. Nibble checks for its own updates in Settings → General. To remove it, uninstall it from Settings → Apps.
 
 ## Build
 
@@ -30,13 +35,13 @@ To release, run **Actions → Build → Run workflow** with a version and tick *
 
 ```
 src/
-  App/            entry point, tray wiring, mouse session, preferences, alerts, update check
+  App/            entry point, tray wiring, mouse session, preferences, alerts, installer, update check
   Devices/        device-neutral model: IMouse, MouseSettings, MouseCaps, Drivers
     RoyalKludge/  RK protocol (RkLink), M3 settings table, firmware check, M3 driver
   Platform/       HID, HTTP and shell interop
-  UI/             theme, glass, layered-window surface, icons, flyout
+  UI/             theme, glass, glass card windows and their control kit, icons, flyout, install card
     Popups/       notification and DPI popup
-    Settings/     settings window, control kit (Canvas), one file per page
+    Settings/     settings window, one file per page
 ```
 
 The UI only talks to `IMouse` and reads `MouseCaps` to decide which options to show.
@@ -49,9 +54,10 @@ The UI only talks to `IMouse` and reads `MouseCaps` to decide which options to s
 
 ### Dev flags
 
-- `--show` opens the flyout; `--settings` opens the settings window.
+- `--show` opens the flyout, `--settings` opens the settings window, and `--portable` skips the install card.
 - `--snapshot out.png dark|light [percent] [charging|asleep] [settings]` renders the flyout to a PNG.
 - `--snapshot-settings out.png dark|light <page> [charging]` renders a settings page.
+- `--snapshot-install out.png dark|light install|update|installed|uninstall` renders the install card.
 - `--test-dpi-hud` and `--test-notifications` show the popups.
 
 ## How it talks to the M3
