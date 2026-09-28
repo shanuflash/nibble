@@ -61,13 +61,16 @@ namespace Nibble
         {
             Mouse = mouse;
             Prefs = new Preferences();
+            previewAutoStart = true;
         }
+
+        readonly bool? previewAutoStart;   // previews show the recommended setup, not this machine's
 
         public static TrayApp Preview(MouseSession mouse) { return new TrayApp(mouse); }
 
         public bool AutoStart
         {
-            get { return Nibble.AutoStart.Enabled; }
+            get { return previewAutoStart ?? Nibble.AutoStart.Enabled; }
             set { Nibble.AutoStart.Enabled = value; RaiseChanged(); }
         }
 
