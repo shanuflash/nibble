@@ -89,15 +89,6 @@ Nibble will not transfer any information to other networked systems unless you a
 
 Neither request sends anything about you or your mouse.
 
-## Code signing policy
-
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). *(Application pending: releases are unsigned until it's approved.)*
-
-- Committers and reviewers: [shanuflash](https://github.com/shanuflash)
-- Approvers: [shanuflash](https://github.com/shanuflash)
-
-Only builds made from this repository by the Build workflow on GitHub Actions are signed, and each signing request is approved by hand.
-
 ## License
 
 [MIT](LICENSE)

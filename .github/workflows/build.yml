@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   build:
@@ -29,45 +28,20 @@ jobs:
           NIBBLE_VERSION: ${{ inputs.version }}
         run: build.cmd
 
-      - name: Upload unsigned exe
-        id: unsigned
-        uses: actions/upload-artifact@v4
-        with:
-          name: Nibble-${{ inputs.version }}-unsigned
-          path: bin/Nibble.exe
-
-      # Code signing through SignPath Foundation. Skipped until the repository variable
-      # SIGNPATH_ORGANIZATION_ID and the secret SIGNPATH_API_TOKEN are set.
-      - name: Sign
-        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
-        uses: signpath/github-action-submit-signing-request@v3
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: nibble
-          signing-policy-slug: release-signing
-          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
-          wait-for-completion: true
-          output-artifact-directory: signed
-
-      - name: Pick the exe to ship
+      - name: Checksum
         shell: pwsh
         run: |
-          $exe = if (Test-Path signed/Nibble.exe) { 'signed/Nibble.exe' } else { 'bin/Nibble.exe' }
-          New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item $exe dist/Nibble.exe
-          $hash = (Get-FileHash dist/Nibble.exe -Algorithm SHA256).Hash
-          "Shipping $exe" >> $env:GITHUB_STEP_SUMMARY
+          $hash = (Get-FileHash bin/Nibble.exe -Algorithm SHA256).Hash
           "SHA256: ``$hash``" >> $env:GITHUB_STEP_SUMMARY
 
       - uses: actions/upload-artifact@v4
         with:
           name: Nibble-${{ inputs.version }}
-          path: dist/Nibble.exe
+          path: bin/Nibble.exe
 
       - name: Publish release
         if: ${{ inputs.release }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "v${{ inputs.version }}" dist/Nibble.exe --title "Nibble ${{ inputs.version }}" --generate-notes
+        run: gh release create "v${{ inputs.version }}" bin/Nibble.exe --title "Nibble ${{ inputs.version }}" --generate-notes
