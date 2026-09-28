@@ -157,7 +157,7 @@ namespace Nibble
         {
             var old = trayIcon;
             bool asleep = !Mouse.Found || !Mouse.Online;
-            trayIcon = IconArt.TrayIcon(Prefs.TrayStyle, SystemInformation.SmallIconSize.Width, Mouse.Found ? Mouse.Percent : -1,
+            trayIcon = TrayArt.Icon(Prefs.TrayStyle, SystemInformation.SmallIconSize.Width, Mouse.Found ? Mouse.Percent : -1,
                 Mouse.Charging && Mouse.Online, asleep, Theme.TaskbarLight());
             tray.Icon = trayIcon;
             if (old != null) old.Dispose();

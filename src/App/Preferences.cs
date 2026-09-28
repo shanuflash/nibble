@@ -35,7 +35,8 @@ namespace Nibble
                     if (Read(k, "LowAlert", out v)) p.BatteryAlerts = v != 0;
                     if (Read(k, "AlertsOverGames", out v)) p.AlertsOverGames = v != 0;
                     if (Read(k, "ShowDpiHud", out v)) p.DpiPopup = v != 0;
-                    if (Read(k, "TrayStyle", out v) && v >= 0 && v < IconArt.StyleNames.Length) p.TrayStyle = (TrayStyle)v;
+                    if (Read(k, "TrayIcon", out v) && v >= 0 && v < TrayArt.Names.Length) p.TrayStyle = (TrayStyle)v;
+                    else if (Read(k, "TrayStyle", out v)) p.TrayStyle = FromOldStyle(v);
                     if (Read(k, "Appearance", out v) && v >= 0 && v <= 2) p.Appearance = v;
                     if (Read(k, "LastPercent", out v) && v >= 0 && v <= 100) p.LastPercent = v;
                     p.PinnedPath = k.GetValue("PinnedPath") as string;
@@ -55,7 +56,8 @@ namespace Nibble
                     Write(k, "LowAlert", BatteryAlerts ? 1 : 0);
                     Write(k, "AlertsOverGames", AlertsOverGames ? 1 : 0);
                     Write(k, "ShowDpiHud", DpiPopup ? 1 : 0);
-                    Write(k, "TrayStyle", (int)TrayStyle);
+                    Write(k, "TrayIcon", (int)TrayStyle);
+                    k.DeleteValue("TrayStyle", false);
                     Write(k, "Appearance", Appearance);
                 }
             }
@@ -75,6 +77,12 @@ namespace Nibble
             LastPercent = percent;
             try { using (var k = Registry.CurrentUser.CreateSubKey(Key)) Write(k, "LastPercent", percent); }
             catch { }
+        }
+
+        // Before 0.5 the styles were Mouse, Number, Battery, Tinted, Minimal; the last two became Mouse.
+        static TrayStyle FromOldStyle(int v)
+        {
+            return v == 1 ? TrayStyle.Number : v == 2 ? TrayStyle.Battery : TrayStyle.Mouse;
         }
 
         static bool Read(RegistryKey k, string name, out int value)

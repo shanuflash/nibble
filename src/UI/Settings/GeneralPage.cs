@@ -46,7 +46,7 @@ namespace Nibble.UI.Settings
             var pf = c.PlatterFlat();
             c.Text("Tray icon", c.Row, th.Label, pf, new RectangleF(gp.X + c.F(18), gp.Y + c.F(12), c.F(200), c.F(22)), TextAlign.Left);
             c.Text("Hover it any time for the exact percentage", c.Sub, th.Secondary, pf, new RectangleF(gp.X + c.F(18), gp.Y + c.F(32), c.F(360), c.F(18)), TextAlign.Left);
-            int n = IconArt.StyleNames.Length;
+            int n = TrayArt.Names.Length;
             float gap = c.F(10), tw = (gp.Width - c.F(36) - gap * (n - 1)) / n, tileH = c.F(104);
             int pct = Mouse.Percent >= 0 ? Mouse.Percent : 60;
             bool lightBar = Theme.TaskbarLight();
@@ -61,9 +61,9 @@ namespace Nibble.UI.Settings
                 Draw.FillRound(c.G, c.Av(sel ? th.Blue : c.Hover == id ? th.ControlHover : th.SegTrack), r, c.F(16));
                 Draw.FillRound(c.G, c.Av(wellColor), well, c.F(10));
                 int ps = c.Pi(32);
-                using (var art = IconArt.TrayArt(style, ps, pct, Mouse.Charging, !Mouse.Online && Mouse.Found, lightBar))
+                using (var art = TrayArt.Render(style, ps, pct, Mouse.Charging, !Mouse.Online && Mouse.Found, lightBar))
                     c.G.DrawImageUnscaled(art, (int)(well.X + (well.Width - ps) / 2), (int)(well.Y + (well.Height - ps) / 2));
-                c.Text(IconArt.StyleNames[i], c.SmallSemi, sel ? Color.White : th.Label, Draw.Flatten(sel ? th.Blue : th.SegTrack, pf),
+                c.Text(TrayArt.Names[i], c.SmallSemi, sel ? Color.White : th.Label, Draw.Flatten(sel ? th.Blue : th.SegTrack, pf),
                     new RectangleF(r.X, well.Bottom + c.F(6), r.Width, c.F(22)), TextAlign.Center);
                 if (!sel) c.Hit(id, r, delegate { App.UpdatePrefs(x => x.TrayStyle = style); });
             }

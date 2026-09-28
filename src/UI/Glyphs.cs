@@ -82,41 +82,5 @@ namespace Nibble.UI
             for (int i = 0; i < inside.Length; i++) inside[i] = !outside[i] && cov[i] < 96;
             return inside;
         }
-
-        // Composites layers into an ARGB bitmap: each layer is (coverage or mask, colour).
-        public static Bitmap Compose(int s, params object[] layers)
-        {
-            var px = new int[s * s];
-            for (int l = 0; l + 1 < layers.Length; l += 2)
-            {
-                var c = (Color)layers[l + 1];
-                var cov = layers[l] as byte[];
-                var mask = layers[l] as bool[];
-                for (int i = 0; i < px.Length; i++)
-                {
-                    int a = cov != null ? cov[i] : (mask[i] ? 255 : 0);
-                    a = a * c.A / 255;
-                    if (a == 0) continue;
-                    px[i] = Over(px[i], c, a);
-                }
-            }
-            var bmp = new Bitmap(s, s, PixelFormat.Format32bppArgb);
-            var data = bmp.LockBits(new Rectangle(0, 0, s, s), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-            Marshal.Copy(px, 0, data.Scan0, px.Length);
-            bmp.UnlockBits(data);
-            return bmp;
-        }
-
-        // Non-premultiplied "source over" for one pixel.
-        static int Over(int dst, Color c, int a)
-        {
-            int da = (dst >> 24) & 255;
-            int oa = a + da * (255 - a) / 255;
-            if (oa == 0) return 0;
-            int r = (c.R * a + ((dst >> 16) & 255) * da * (255 - a) / 255) / oa;
-            int g = (c.G * a + ((dst >> 8) & 255) * da * (255 - a) / 255) / oa;
-            int b = (c.B * a + (dst & 255) * da * (255 - a) / 255) / oa;
-            return (oa << 24) | (r << 16) | (g << 8) | b;
-        }
     }
 }
