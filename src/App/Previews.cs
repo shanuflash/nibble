@@ -30,7 +30,7 @@ namespace Nibble
                 bool charging = a.Length > 4 && a[4] == "charging";
                 bool online = !(a.Length > 4 && a[4] == "asleep");
                 bool full = a.Length > 4 && a[4] == "full";
-                var m = Session(online, full ? 100 : percent, charging, full, DateTime.Now.AddSeconds(-4));
+                var m = Session(online, full ? 100 : percent, charging, full || charging, DateTime.Now.AddSeconds(-4));
                 new Flyout(TrayApp.Preview(m)).Snapshot(a[1], a[2] == "dark", Program.Has(a, "settings"));
                 return true;
             }
@@ -38,7 +38,7 @@ namespace Nibble
             {
                 Program.InitPreview();
                 bool charging = Program.Has(a, "charging");
-                var m = Session(true, charging ? -1 : 55, charging, false, DateTime.Now);
+                var m = Session(true, charging ? -1 : 55, charging, charging, DateTime.Now);
                 using (var w = new SettingsWindow(TrayApp.Preview(m))) w.Snapshot(a[1], a[2] == "dark", int.Parse(a[3]));
                 return true;
             }
