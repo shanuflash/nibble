@@ -10,6 +10,10 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
   <img src="docs/screenshots/flyout-light.png" width="250" alt="Tray flyout in light mode">
   <img src="docs/screenshots/flyout-charging.png" width="250" alt="Tray flyout while charging">
 </p>
+<p align="center">
+  <img src="docs/screenshots/notification.png" width="380" alt="Low battery notification">
+  <img src="docs/screenshots/dpi-popup.png" width="290" alt="On-screen DPI popup">
+</p>
 
 <details>
 <summary>More screenshots</summary>
@@ -18,10 +22,12 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
   <img src="docs/screenshots/settings-performance.png" width="760" alt="Performance settings">
   <img src="docs/screenshots/settings-power.png" width="760" alt="Power settings, light mode">
   <img src="docs/screenshots/settings-general.png" width="760" alt="General settings with the tray icon styles">
-  <img src="docs/screenshots/install.png" width="360" alt="Install card">
+  <img src="docs/screenshots/install.png" width="380" alt="Install card">
 </p>
 
 </details>
+
+<sub>Screenshot backdrops are Apple’s iOS wallpapers, used for illustration only.</sub>
 
 - **Tray icon.** Five styles (fill-up mouse, number, battery, tinted, minimal), drawn with Segoe Fluent Icons so they match the system icons. Hover for the exact percentage.
 - **Flyout.** Click the icon for a glass panel with the battery ring, connection, DPI and last sync.
@@ -80,7 +86,10 @@ The UI only talks to `IMouse` and reads `MouseCaps` to decide which options to s
 - `--snapshot-settings out.png dark|light <page> [charging]` renders a settings page.
 - `--snapshot-install out.png dark|light install|update|installed|uninstall [busy|done|error]` renders the install card.
 
-The screenshots in `docs/screenshots` are made with these flags.
+- `--snapshot-toast out.png dark|light [full]` and `--snapshot-dpi out.png dark|light` render the popups.
+- Add `--bg image.png` to any snapshot to render it over that image instead of the plain backdrop.
+
+The screenshots in `docs/screenshots` are made with these flags. The wallpapers aren’t in the repo.
 - `--test-dpi-hud` and `--test-notifications` show the popups.
 
 ## How it talks to the M3

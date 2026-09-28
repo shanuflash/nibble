@@ -518,16 +518,16 @@ namespace Nibble.UI
         public void Snapshot(string path, bool dark, bool settingsView)
         {
             th = Theme.Current(dark);
-            using (var wall = Wallpaper.Small(Size))
+            Point o;
+            using (var wall = UI.Snapshot.Backdrop(Size, S, dark, out o))
             {
-                using (var cap = wall.Clone(new Rectangle(Px(M), Px(M), Px(PW), Px(PH)), wall.PixelFormat))
+                using (var cap = wall.Clone(new Rectangle(o.X + Px(M), o.Y + Px(M), Px(PW), Px(PH)), wall.PixelFormat))
                     BuildSurfaces(cap);
                 ring = RingTarget(); SyncControls();
                 nav = settingsView ? 1 : 0; navTo = nav; openP = 1;
                 using (var g = Graphics.FromImage(frame.Bmp)) Compose(g);
                 frame.ApplyMask();
-                using (var g = Graphics.FromImage(wall)) g.DrawImageUnscaled(frame.Bmp, 0, 0);
-                wall.Save(path, ImageFormat.Png);
+                UI.Snapshot.Save(wall, frame.Bmp, o, path, S);
             }
             FreeSurfaces();
         }

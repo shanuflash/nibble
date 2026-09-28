@@ -12,12 +12,17 @@ namespace Nibble
     //   --snapshot out.png dark|light [percent] [charging|asleep] [settings]    flyout
     //   --snapshot-settings out.png dark|light page [charging]                 settings window
     //   --snapshot-install out.png dark|light install|update|installed|uninstall [busy|done|error]
+    //   --snapshot-toast out.png dark|light [full]                               battery alert
+    //   --snapshot-dpi out.png dark|light                                        DPI popup
+    //   add --bg image.png to any snapshot to render it over that image
     //   --test-dpi-hud                                                         DPI popup, three presses
     //   --test-notifications                                                   each battery alert
     static class Previews
     {
         public static bool Run(string[] a)
         {
+            int bg = Array.IndexOf(a, "--bg");
+            if (bg >= 0 && bg + 1 < a.Length) Wallpaper.File = a[bg + 1];
             if (a.Length >= 3 && a[0] == "--snapshot")
             {
                 Program.InitPreview();
@@ -41,6 +46,22 @@ namespace Nibble
                 Program.InitPreview();
                 var mode = (InstallMode)Enum.Parse(typeof(InstallMode), a[3], true);
                 using (var card = InstallCard.ForPreview(mode)) card.Snapshot(a[1], a[2] == "dark", a.Length > 4 ? a[4] : "");
+                return true;
+            }
+            if (a.Length >= 3 && a[0] == "--snapshot-toast")
+            {
+                Program.InitPreview();
+                string name = Drivers.All[0].Name;
+                bool full = Program.Has(a, "full");
+                using (var t = full ? Toast.ForPreview(Toast.Kind.Full, BatteryAlerts.FullTitle, BatteryAlerts.FullBody(name))
+                                    : Toast.ForPreview(Toast.Kind.Low, BatteryAlerts.LowTitle, BatteryAlerts.LowBody(name, 18)))
+                    t.Snapshot(a[1], a[2] == "dark");
+                return true;
+            }
+            if (a.Length >= 3 && a[0] == "--snapshot-dpi")
+            {
+                Program.InitPreview();
+                using (var h = DpiHud.ForPreview(1600, 2, 3, Theme.Hex(0x00FFFF))) h.Snapshot(a[1], a[2] == "dark");
                 return true;
             }
             if (a.Length >= 1 && a[0] == "--test-dpi-hud") { TestDpiHud(); return true; }

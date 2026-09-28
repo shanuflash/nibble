@@ -164,6 +164,27 @@ namespace Nibble.UI.Popups
             PaintContent(g, card);
         }
 
+        // Renders the card fully shown over a wallpaper, for design review.
+        public void Snapshot(string path, bool dark)
+        {
+            Th = Theme.Current(dark);
+            var size = new Size(Px(cardW), Px(cardH));
+            Point o;
+            using (var wall = UI.Snapshot.Backdrop(Size, S, dark, out o))
+            {
+                using (var cap = wall.Clone(new Rectangle(o.X + Px(Inset), o.Y + Px(Inset), size.Width, size.Height), wall.PixelFormat))
+                    backdrop = Glass.Frost(cap, size, Glass.AdaptiveTint(cap, Th.Tint, Th.Dark, 90, 175), Th.Fallback, 1.8f);
+                under = Glass.Average(backdrop);
+                frame = new Surface(Size.Width, Size.Height);
+                frame.SetMask(Card, F(radius));
+                t = 1;
+                using (var g = Graphics.FromImage(frame.Bmp)) Compose(g);
+                frame.ApplyMask();
+                UI.Snapshot.Save(wall, frame.Bmp, o, path, S);
+            }
+            FreeSurfaces();
+        }
+
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             anim.Stop();

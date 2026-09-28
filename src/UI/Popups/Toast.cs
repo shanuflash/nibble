@@ -48,6 +48,8 @@ namespace Nibble.UI.Popups
             waitTimer.Start();
         }
 
+        public static Toast ForPreview(Kind kind, string title, string body) { return new Toast(kind, title, body, null, false); }
+
         Toast(Kind kind, string title, string body, Action onClick, bool clickThrough)
             : base(340, 76, 22, clickThrough, 280, 6000, 180)
         {

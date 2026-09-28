@@ -24,6 +24,13 @@ namespace Nibble.UI.Popups
             current.Present(dpi, stage, stages, led);
         }
 
+        public static DpiHud ForPreview(int dpi, int stage, int stages, Color led)
+        {
+            var h = new DpiHud();
+            h.dpi = dpi; h.stage = stage; h.stages = stages; h.led = led;
+            return h;
+        }
+
         DpiHud() : base(W, H, H / 2, true, 160, 1300, 220)
         {
             fNum = new Font(Draw.PickFont("Segoe UI Variable Display Semib", "Segoe UI Semibold"), 26 * S, FontStyle.Regular, GraphicsUnit.Pixel);

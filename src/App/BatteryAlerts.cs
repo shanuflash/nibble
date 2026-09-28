@@ -27,14 +27,18 @@ namespace Nibble
             }
         }
 
+        public const string LowTitle = "Mouse battery low", FullTitle = "Fully charged";
+        public static string LowBody(string mouse, int percent) { return string.Format("{0} is at {1}%. Plug it in soon.", mouse, percent); }
+        public static string FullBody(string mouse) { return mouse + " is at 100%. You can unplug it."; }
+
         public static void ShowLow(string mouse, int percent, Action onClick, bool overGames)
         {
-            Toast.Show(Toast.Kind.Low, "Mouse battery low", string.Format("{0} is at {1}%. Plug it in soon.", mouse, percent), onClick, overGames);
+            Toast.Show(Toast.Kind.Low, LowTitle, LowBody(mouse, percent), onClick, overGames);
         }
 
         public static void ShowFull(string mouse, Action onClick, bool overGames)
         {
-            Toast.Show(Toast.Kind.Full, "Fully charged", mouse + " is at 100%. You can unplug it.", onClick, overGames);
+            Toast.Show(Toast.Kind.Full, FullTitle, FullBody(mouse), onClick, overGames);
         }
     }
 }

@@ -289,17 +289,16 @@ namespace Nibble.UI
         protected void SnapshotTo(string path, bool dark)
         {
             Th = Theme.Current(dark);
-            int pad = Pi(40);
             var size = new Size(Pi(CardW + 2 * M), Pi(CardH + 2 * M));
-            using (var wall = Wallpaper.Large(new Size(size.Width + 2 * pad, size.Height + 2 * pad)))
+            Point o;
+            using (var wall = Snapshot.Backdrop(size, C.U, dark, out o))
             {
                 CreateFrame(size);
-                using (var cap = wall.Clone(new Rectangle(pad + Pi(M), pad + Pi(M), Pi(CardW), Pi(CardH)), wall.PixelFormat)) BuildGlass(cap);
+                using (var cap = wall.Clone(new Rectangle(o.X + Pi(M), o.Y + Pi(M), Pi(CardW), Pi(CardH)), wall.PixelFormat)) BuildGlass(cap);
                 fade = 1;
                 using (var g = Graphics.FromImage(frame.Bmp)) Compose(g);
                 frame.ApplyMask();
-                using (var g = Graphics.FromImage(wall)) g.DrawImageUnscaled(frame.Bmp, pad, pad);
-                wall.Save(path, ImageFormat.Png);
+                Snapshot.Save(wall, frame.Bmp, o, path, C.U);
             }
             frame.Dispose(); frame = null;
             glass.Dispose(); glass = null;
