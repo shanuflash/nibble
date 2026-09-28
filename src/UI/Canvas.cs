@@ -5,10 +5,10 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 
-namespace Nibble.UI.Settings
+namespace Nibble.UI
 {
-    // Drawing context and control kit for the settings window. The window sets the per-frame fields
-    // (Graphics, fade, hover...) and pages paint through it, registering hit targets as they go.
+    // Drawing context and control kit for glass card windows. The window sets the per-frame fields
+    // (Graphics, fade, hover...) and content paints through it, registering hit targets as it goes.
     sealed class Canvas
     {
         public readonly float U;          // px per logical unit

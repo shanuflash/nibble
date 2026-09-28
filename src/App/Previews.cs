@@ -11,6 +11,7 @@ namespace Nibble
     // Developer modes for reviewing the UI without a mouse:
     //   --snapshot out.png dark|light [percent] [charging|asleep] [settings]    flyout
     //   --snapshot-settings out.png dark|light page [charging]                 settings window
+    //   --snapshot-install out.png dark|light install|update|installed|uninstall
     //   --test-dpi-hud                                                         DPI popup, three presses
     //   --test-notifications                                                   each battery alert
     static class Previews
@@ -33,6 +34,13 @@ namespace Nibble
                 bool charging = Program.Has(a, "charging");
                 var m = Session(true, charging ? -1 : 55, charging, DateTime.Now);
                 using (var w = new SettingsWindow(TrayApp.Preview(m))) w.Snapshot(a[1], a[2] == "dark", int.Parse(a[3]));
+                return true;
+            }
+            if (a.Length >= 4 && a[0] == "--snapshot-install")
+            {
+                Program.InitPreview();
+                var mode = (InstallMode)Enum.Parse(typeof(InstallMode), a[3], true);
+                using (var card = InstallCard.ForPreview(mode)) card.Snapshot(a[1], a[2] == "dark");
                 return true;
             }
             if (a.Length >= 1 && a[0] == "--test-dpi-hud") { TestDpiHud(); return true; }

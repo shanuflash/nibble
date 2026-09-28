@@ -90,40 +90,44 @@ namespace Nibble
 
         public static bool Enabled
         {
-            get { return Registered() && Approval() != Disabled; }
-            set
+            get { return EnabledFor(Application.ExecutablePath); }
+            set { Set(value, Application.ExecutablePath); }
+        }
+
+        public static void Set(bool on, string exePath)
+        {
+            try
             {
-                try
+                using (var run = Registry.CurrentUser.CreateSubKey(RunKey))
+                using (var ok = Registry.CurrentUser.CreateSubKey(ApprovedKey))
                 {
-                    using (var run = Registry.CurrentUser.CreateSubKey(RunKey))
-                    using (var ok = Registry.CurrentUser.CreateSubKey(ApprovedKey))
+                    if (on)
                     {
-                        if (value)
-                        {
-                            run.SetValue(AppInfo.Name, "\"" + Application.ExecutablePath + "\"");
-                            ok.SetValue(AppInfo.Name, Approved, RegistryValueKind.Binary);
-                        }
-                        else
-                        {
-                            run.DeleteValue(AppInfo.Name, false);
-                            ok.DeleteValue(AppInfo.Name, false);
-                        }
+                        run.SetValue(AppInfo.Name, "\"" + exePath + "\"");
+                        ok.SetValue(AppInfo.Name, Approved, RegistryValueKind.Binary);
+                    }
+                    else
+                    {
+                        run.DeleteValue(AppInfo.Name, false);
+                        ok.DeleteValue(AppInfo.Name, false);
                     }
                 }
-                catch { }
             }
+            catch { }
         }
+
+        public static bool EnabledFor(string exePath) { return RegisteredTo(exePath) && Approval() != Disabled; }
 
         const int Missing = 0, On = 1, Disabled = 2;
 
-        static bool Registered()
+        static bool RegisteredTo(string exePath)
         {
             try
             {
                 using (var k = Registry.CurrentUser.OpenSubKey(RunKey))
                 {
                     var v = k == null ? null : k.GetValue(AppInfo.Name) as string;
-                    return v != null && v.Trim('"').Equals(Application.ExecutablePath, StringComparison.OrdinalIgnoreCase);
+                    return v != null && v.Trim('"').Equals(exePath, StringComparison.OrdinalIgnoreCase);
                 }
             }
             catch { return false; }

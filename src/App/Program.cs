@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows.Forms;
 using Nibble.UI;
 
@@ -16,14 +15,17 @@ namespace Nibble
             if (args.Length == 2 && args[0] == "--make-icon") { IconArt.WriteIco(args[1]); return; }
             if (Previews.Run(args)) return;
 
-            bool created;
-            using (var mutex = new Mutex(true, @"Local\Nibble.RK-M3", out created))
+            SetProcessDPIAware();
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            if (Has(args, "--uninstall")) { InstallCard.Ask(InstallMode.Uninstall); return; }
+            if (!Has(args, "--portable") && Installer.ShouldOffer() && !OfferInstall()) return;
+
+            using (var instance = new Instance())
             {
-                if (!created) return;
-                SetProcessDPIAware();
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                var app = new TrayApp(Has(args, "--show"));
+                if (!instance.IsFirst) { Instance.SignalShow(); return; }
+                var app = new TrayApp(Has(args, "--show"), instance);
                 if (Has(args, "--settings"))
                 {
                     var t = new System.Windows.Forms.Timer { Interval = 1500 };
@@ -31,6 +33,26 @@ namespace Nibble
                     t.Start();
                 }
                 Application.Run(app);
+            }
+        }
+
+        // Returns true to keep running this copy.
+        static bool OfferInstall()
+        {
+            var mode = !Installer.IsInstalled ? InstallMode.Install
+                : Installer.NewerThanInstalled() ? InstallMode.Update
+                : InstallMode.Installed;
+            switch (InstallCard.Ask(mode))
+            {
+                case InstallChoice.Primary:
+                    if (Instance.Running()) Instance.SignalShow();
+                    else Installer.LaunchInstalled("--show");
+                    return false;
+                case InstallChoice.Secondary:
+                    Installer.RememberPortable();
+                    return true;
+                default:
+                    return false;
             }
         }
 

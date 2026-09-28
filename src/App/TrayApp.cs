@@ -29,7 +29,7 @@ namespace Nibble
         SettingsWindow settings;
         Icon trayIcon;
 
-        public TrayApp(bool showOnStart)
+        public TrayApp(bool showOnStart, Instance instance)
         {
             ui = new WindowsFormsSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(ui);
@@ -50,6 +50,7 @@ namespace Nibble
             tray.Visible = true;
 
             After(3000, delegate { Shell.PromoteTrayIcon(Application.ExecutablePath); });
+            instance.Listen(ui, flyout.ShowFlyout, Quit);
             SystemEvents.PowerModeChanged += OnPower;
             SystemEvents.UserPreferenceChanged += OnSystemPrefs;
             if (showOnStart) After(400, flyout.ShowFlyout);
