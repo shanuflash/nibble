@@ -91,6 +91,29 @@ namespace Nibble.UI
             return Frame != null ? Size.Round(Frame.Measure(s, f)) : TextRenderer.MeasureText(s, f, Size.Empty, TextFormatFlags.NoPadding);
         }
 
+        // Word-wrapped text starting at r's top; returns the height used.
+        public float Paragraph(string s, Font f, Color c, Color under, RectangleF r, TextAlign align, float lineHeight)
+        {
+            var lines = Wrap(s, f, r.Width);
+            for (int i = 0; i < lines.Count; i++)
+                Text(lines[i], f, c, under, new RectangleF(r.X, r.Y + i * lineHeight, r.Width, lineHeight), align);
+            return lines.Count * lineHeight;
+        }
+
+        public List<string> Wrap(string s, Font f, float width)
+        {
+            var lines = new List<string>();
+            string line = "";
+            foreach (var word in s.Split(' '))
+            {
+                string next = line.Length == 0 ? word : line + " " + word;
+                if (line.Length > 0 && Measure(next, f).Width > width) { lines.Add(line); line = word; }
+                else line = next;
+            }
+            if (line.Length > 0) lines.Add(line);
+            return lines;
+        }
+
         // ---------- hit targets ----------
 
         public void Hit(string id, RectangleF r, Action a) { if (Interactive) Hits.Add(id, r, a); }

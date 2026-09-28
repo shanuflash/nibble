@@ -29,7 +29,11 @@ namespace Nibble
             return true;
         }
 
-        public static void SignalShow() { Signal(ShowName); }
+        public static void SignalShow()
+        {
+            Platform.Shell.AllowForeground();
+            Signal(ShowName);
+        }
 
         // Asks the running instance to exit; true once it has.
         public static bool RequestQuit(int timeoutMs)

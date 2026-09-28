@@ -93,6 +93,7 @@ namespace Nibble
 
         public static void LaunchInstalled(string args)
         {
+            Platform.Shell.AllowForeground();
             try { Process.Start(new ProcessStartInfo(InstalledExe, args) { UseShellExecute = true }); }
             catch { }
         }

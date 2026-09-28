@@ -108,6 +108,7 @@ namespace Nibble.UI
             Render();
             Show();
             Activate();
+            Shell.TakeForeground(Handle);
             clock.Start();
             Kick();
         }

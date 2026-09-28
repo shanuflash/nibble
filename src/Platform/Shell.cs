@@ -16,6 +16,8 @@ namespace Nibble.Platform
     {
         [DllImport("shell32.dll")] static extern int SHQueryUserNotificationState(out int state);
         [DllImport("kernel32.dll")] static extern bool SetProcessWorkingSetSize(IntPtr p, IntPtr min, IntPtr max);
+        [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int processId);
+        [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr hwnd);
 
         const int QUNS_BUSY = 2, QUNS_RUNNING_D3D_FULL_SCREEN = 3, QUNS_PRESENTATION_MODE = 4;
 
@@ -56,6 +58,12 @@ namespace Nibble.Platform
             }
             catch { }
         }
+
+        // Windows only lets the foreground process hand focus on. Call this before starting or signalling
+        // another Nibble so its flyout can take focus (and close again on an outside click).
+        public static void AllowForeground() { AllowSetForegroundWindow(-1); }
+
+        public static void TakeForeground(IntPtr hwnd) { SetForegroundWindow(hwnd); }
 
         public static void Open(string url)
         {
