@@ -1,6 +1,6 @@
 # Nibble
 
-Battery and settings for the Royal Kludge M3, in your Windows tray.
+Nibble is a small Windows tray app for the Royal Kludge M3 mouse. It keeps the battery level next to the clock, warns you before it runs out, and lets you change DPI, polling rate, sensor and power settings without opening RK's web driver. Everything goes straight to the mouse over USB, from a single 167 KB exe.
 
 <p align="center">
   <img src="docs/screenshots/settings-general.png" width="760" alt="Nibble settings">
@@ -29,8 +29,6 @@ Battery and settings for the Royal Kludge M3, in your Windows tray.
 
 </details>
 
-A tray app that replaces RK's web driver, in a single 167 KB exe.
-
 ## Features
 
 - Battery level in the tray, with five icon styles
@@ -47,10 +45,18 @@ Measured on Windows 11, as shown in Task Manager:
 | | Memory | CPU |
 |---|---|---|
 | Idle in the tray | 0.3 MB | 0% |
-| Flyout open | 4 MB | |
-| Settings open | 16 MB | |
+| Flyout open | 4 MB | < 1% |
+| Settings open | 16 MB | < 1% |
 
-Panels free their memory as soon as they close, so Nibble drops back to 0.3 MB.
+CPU peaks briefly at ~4% while a panel animates open. Panels free their memory as soon as they close, so Nibble drops back to 0.3 MB.
+
+## Coming up
+
+- Button remapping
+- Battery time left, estimated from how fast it drains
+- Profiles that switch automatically per game
+- Install with winget and Scoop
+- Support for more RK mice
 
 ## Install
 
