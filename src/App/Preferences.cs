@@ -20,6 +20,7 @@ namespace Nibble
         public TrayStyle TrayStyle = TrayStyle.Mouse;
         public int Appearance;                // 0 = follow Windows, 1 = light, 2 = dark
         public int LastPercent = -1;          // so a sleeping mouse still shows its level after a restart
+        public string PinnedPath;             // exe whose tray icon Nibble already pinned once; later choices are the user's
 
         public static Preferences Load()
         {
@@ -37,6 +38,7 @@ namespace Nibble
                     if (Read(k, "TrayStyle", out v) && v >= 0 && v < IconArt.StyleNames.Length) p.TrayStyle = (TrayStyle)v;
                     if (Read(k, "Appearance", out v) && v >= 0 && v <= 2) p.Appearance = v;
                     if (Read(k, "LastPercent", out v) && v >= 0 && v <= 100) p.LastPercent = v;
+                    p.PinnedPath = k.GetValue("PinnedPath") as string;
                 }
             }
             catch { }
@@ -57,6 +59,13 @@ namespace Nibble
                     Write(k, "Appearance", Appearance);
                 }
             }
+            catch { }
+        }
+
+        public void SavePinnedPath(string exePath)
+        {
+            PinnedPath = exePath;
+            try { using (var k = Registry.CurrentUser.CreateSubKey(Key)) k.SetValue("PinnedPath", exePath); }
             catch { }
         }
 

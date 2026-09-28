@@ -38,8 +38,8 @@ namespace Nibble.Platform
             SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, new IntPtr(-1), new IntPtr(-1));
         }
 
-        // Windows 11 puts new tray icons in the overflow. Promote ours once, unless the user already chose.
-        // True if it changed anything; Explorer only reads the setting when the icon is (re-)added.
+        // Windows 11 files new tray icons in the overflow (IsPromoted = 0 as soon as they appear). Pins ours;
+        // true if the icon's entry exists yet. Explorer applies it when the icon is next added.
         public static bool PromoteTrayIcon(string exePath)
         {
             bool changed = false;
@@ -54,7 +54,6 @@ namespace Nibble.Platform
                             if (k == null) continue;
                             var exe = k.GetValue("ExecutablePath") as string;
                             if (!string.Equals(exe, exePath, StringComparison.OrdinalIgnoreCase)) continue;
-                            if (k.GetValue("IsPromoted") != null) continue;
                             k.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
                             changed = true;
                         }

@@ -49,7 +49,7 @@ namespace Nibble
             UpdateIcon();
             tray.Visible = true;
 
-            After(3000, PromoteTrayIcon);
+            After(3000, delegate { if (!PromoteTrayIcon()) After(7000, delegate { PromoteTrayIcon(); }); });
             instance.Listen(ui, flyout.ShowFlyout, Quit);
             SystemEvents.PowerModeChanged += OnPower;
             SystemEvents.UserPreferenceChanged += OnSystemPrefs;
@@ -124,11 +124,17 @@ namespace Nibble
             ExitThread();
         }
 
-        void PromoteTrayIcon()
+        // Pins the tray icon the first time this exe runs; after that, pinning is the user's call.
+        // False if Windows hasn't registered the icon yet.
+        bool PromoteTrayIcon()
         {
-            if (!Shell.PromoteTrayIcon(Application.ExecutablePath)) return;
+            string exe = Application.ExecutablePath;
+            if (string.Equals(Prefs.PinnedPath, exe, StringComparison.OrdinalIgnoreCase)) return true;
+            if (!Shell.PromoteTrayIcon(exe)) return false;
+            Prefs.SavePinnedPath(exe);
             tray.Visible = false;   // re-add so Explorer applies the pin now
             tray.Visible = true;
+            return true;
         }
 
         void OnStatusRead(object sender, EventArgs e)
