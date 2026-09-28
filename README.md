@@ -2,6 +2,27 @@
 
 A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, and every setting the RK web driver has, without the browser.
 
+<p align="center">
+  <img src="docs/screenshots/settings-dpi.png" width="760" alt="Settings window, DPI page">
+</p>
+<p align="center">
+  <img src="docs/screenshots/flyout-dark.png" width="250" alt="Tray flyout in dark mode">
+  <img src="docs/screenshots/flyout-light.png" width="250" alt="Tray flyout in light mode">
+  <img src="docs/screenshots/flyout-charging.png" width="250" alt="Tray flyout while charging">
+</p>
+
+<details>
+<summary>More screenshots</summary>
+
+<p align="center">
+  <img src="docs/screenshots/settings-performance.png" width="760" alt="Performance settings">
+  <img src="docs/screenshots/settings-power.png" width="760" alt="Power settings, light mode">
+  <img src="docs/screenshots/settings-general.png" width="760" alt="General settings with the tray icon styles">
+  <img src="docs/screenshots/install.png" width="360" alt="Install card">
+</p>
+
+</details>
+
 - **Tray icon.** Five styles (fill-up mouse, number, battery, tinted, minimal), drawn with Segoe Fluent Icons so they match the system icons. Hover for the exact percentage.
 - **Flyout.** Click the icon for a glass panel with the battery ring, connection, DPI and last sync.
 - **Settings.** DPI stages with LED colours, polling rate (125 Hz to 8 kHz), sensor mode, Motion Sync, ripple control, angle snapping, glass mode, lift-off distance, debounce and sleep timer. Everything is read from and written to the mouse directly.
@@ -57,7 +78,9 @@ The UI only talks to `IMouse` and reads `MouseCaps` to decide which options to s
 - `--show` opens the flyout, `--settings` opens the settings window, and `--portable` skips the install card.
 - `--snapshot out.png dark|light [percent] [charging|asleep] [settings]` renders the flyout to a PNG.
 - `--snapshot-settings out.png dark|light <page> [charging]` renders a settings page.
-- `--snapshot-install out.png dark|light install|update|installed|uninstall` renders the install card.
+- `--snapshot-install out.png dark|light install|update|installed|uninstall [busy|done|error]` renders the install card.
+
+The screenshots in `docs/screenshots` are made with these flags.
 - `--test-dpi-hud` and `--test-notifications` show the popups.
 
 ## How it talks to the M3
