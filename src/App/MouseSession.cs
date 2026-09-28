@@ -81,10 +81,11 @@ namespace Nibble
         }
 
         // Design previews: fixed state, no device access.
-        public void Simulate(bool online, int percent, bool charging, MouseSettings settings, DateTime syncedAt)
+        public void Simulate(bool online, int percent, bool charging, bool wired, MouseSettings settings, DateTime syncedAt)
         {
-            Found = true; Online = online; Percent = percent; Charging = charging;
+            Found = true; Online = online; Percent = percent; Charging = charging; Wired = wired;
             LevelHidden = charging && percent < 0;
+            FullyCharged = !charging && percent >= 100 && wired;
             Settings = settings; SyncedAt = syncedAt;
         }
 

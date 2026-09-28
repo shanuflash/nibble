@@ -7,8 +7,8 @@ A tiny Windows tray app for the **Royal Kludge M3** mouse: battery at a glance, 
 </p>
 <p align="center">
   <img src="docs/screenshots/flyout-dark.png" width="250" alt="Tray flyout in dark mode">
-  <img src="docs/screenshots/flyout-light.png" width="250" alt="Tray flyout in light mode">
   <img src="docs/screenshots/flyout-charging.png" width="250" alt="Tray flyout while charging">
+  <img src="docs/screenshots/flyout-full.png" width="250" alt="Tray flyout when fully charged">
 </p>
 <p align="center">
   <img src="docs/screenshots/notification.png" width="380" alt="Low battery notification">
@@ -82,7 +82,7 @@ The UI only talks to `IMouse` and reads `MouseCaps` to decide which options to s
 ### Dev flags
 
 - `--show` opens the flyout, `--settings` opens the settings window, and `--portable` skips the install card.
-- `--snapshot out.png dark|light [percent] [charging|asleep] [settings]` renders the flyout to a PNG.
+- `--snapshot out.png dark|light [percent] [charging|asleep|full] [settings]` renders the flyout to a PNG.
 - `--snapshot-settings out.png dark|light <page> [charging]` renders a settings page.
 - `--snapshot-install out.png dark|light install|update|installed|uninstall [busy|done|error]` renders the install card.
 

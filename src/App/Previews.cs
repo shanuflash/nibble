@@ -9,7 +9,7 @@ using Nibble.UI.Settings;
 namespace Nibble
 {
     // Developer modes for reviewing the UI without a mouse:
-    //   --snapshot out.png dark|light [percent] [charging|asleep] [settings]    flyout
+    //   --snapshot out.png dark|light [percent] [charging|asleep|full] [settings]   flyout
     //   --snapshot-settings out.png dark|light page [charging]                 settings window
     //   --snapshot-install out.png dark|light install|update|installed|uninstall [busy|done|error]
     //   --snapshot-toast out.png dark|light [full]                               battery alert
@@ -29,7 +29,8 @@ namespace Nibble
                 int percent = a.Length > 3 ? int.Parse(a[3]) : 57;
                 bool charging = a.Length > 4 && a[4] == "charging";
                 bool online = !(a.Length > 4 && a[4] == "asleep");
-                var m = Session(online, percent, charging, DateTime.Now.AddSeconds(-4));
+                bool full = a.Length > 4 && a[4] == "full";
+                var m = Session(online, full ? 100 : percent, charging, full, DateTime.Now.AddSeconds(-4));
                 new Flyout(TrayApp.Preview(m)).Snapshot(a[1], a[2] == "dark", Program.Has(a, "settings"));
                 return true;
             }
@@ -37,7 +38,7 @@ namespace Nibble
             {
                 Program.InitPreview();
                 bool charging = Program.Has(a, "charging");
-                var m = Session(true, charging ? -1 : 55, charging, DateTime.Now);
+                var m = Session(true, charging ? -1 : 55, charging, false, DateTime.Now);
                 using (var w = new SettingsWindow(TrayApp.Preview(m))) w.Snapshot(a[1], a[2] == "dark", int.Parse(a[3]));
                 return true;
             }
@@ -69,10 +70,10 @@ namespace Nibble
             return false;
         }
 
-        static MouseSession Session(bool online, int percent, bool charging, DateTime synced)
+        static MouseSession Session(bool online, int percent, bool charging, bool wired, DateTime synced)
         {
             var m = new MouseSession(Drivers.All[0]);
-            m.Simulate(online, percent, charging, SampleSettings(m.Device.Caps), synced);
+            m.Simulate(online, percent, charging, wired, SampleSettings(m.Device.Caps), synced);
             return m;
         }
 
