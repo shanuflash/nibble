@@ -288,7 +288,7 @@ namespace Nibble.UI
 
                 Txt(g, name, fName, th.Secondary, new RectangleF(x, F(30), w, F(18)), TextAlign.Left);
                 bool known = Mouse.Percent >= 0;
-                string num = known ? ((int)Math.Round(ring * 100)).ToString() : "—";
+                string num = known ? ((int)Math.Round(ring * 100)).ToString() : "â€”";
                 SizeF ns = frame.Measure(num, fNum);
                 var nr = new RectangleF(x - F(3), F(46), ns.Width + F(4), F(62));
                 Txt(g, num, fNum, Mouse.Online ? th.Label : th.Secondary, nr, TextAlign.Left);
@@ -325,8 +325,8 @@ namespace Nibble.UI
                 {
                     LineIcons.Crosshair(g, ir, A(th.Orange), S);
                     var s = Mouse.Settings;
-                    val = s != null && s.CurrentDpi > 0 ? s.CurrentDpi.ToString() : "—";
-                    cap = s != null && s.StageCount > 1 ? "DPI · Stage " + s.Stage : "DPI";
+                    val = s != null && s.CurrentDpi > 0 ? s.CurrentDpi.ToString() : "â€”";
+                    cap = s != null && s.StageCount > 1 ? "DPI Â· Stage " + s.Stage : "DPI";
                 }
                 else
                 {
@@ -375,7 +375,7 @@ namespace Nibble.UI
             int n = Preferences.Intervals.Length;
             float iw = sw / n;
             var thumb = new RectangleF(sr.X + seg * iw + F(2), sr.Y + F(2), iw - F(4), sh - F(4));
-            if (!th.Dark) Draw.FillRound(g, A(Color.FromArgb(28, 0, 0, 0)), new RectangleF(thumb.X, thumb.Y + F(1), thumb.Width, thumb.Height), thumb.Height / 2);
+            Draw.FillRound(g, A(th.SegShadow), new RectangleF(thumb.X, thumb.Y + F(1), thumb.Width, thumb.Height), thumb.Height / 2);
             Draw.FillRound(g, A(th.SegThumb), thumb, thumb.Height / 2);
             Draw.Rim(g, thumb, thumb.Height / 2, A(th.RimTop), A(th.RimBottom), Math.Max(1f, F(0.8f)));
             for (int i = 0; i < n; i++)
@@ -405,12 +405,11 @@ namespace Nibble.UI
             float w = F(56), h = F(30);
             var tr = new RectangleF(r.Right - F(14) - w, r.Y + (r.Height - h) / 2, w, h);
             Draw.FillRound(g, A(Draw.Lerp(th.SwitchOff, th.Green, pos)), tr, h / 2);
-            // The knob stretches while pressed.
-            float kw = F(pressed == id ? 38 : 34), kh = h - F(4);
+            float kw = F(34), kh = h - F(4);
             var knob = new RectangleF(tr.X + F(2) + pos * (w - F(4) - kw), tr.Y + F(2), kw, kh);
             Draw.FillRound(g, A(Color.FromArgb(40, 0, 0, 0)), new RectangleF(knob.X, knob.Y + F(1.5f), knob.Width, knob.Height), kh / 2);
             Draw.FillRound(g, A(Color.White), knob, kh / 2);
-            AddHit(id, r, toggle);
+            if (recordHits) hits.Add(id, r, toggle, true);
         }
 
         // ---------- primitives ----------
@@ -466,6 +465,7 @@ namespace Nibble.UI
         protected override void OnMouseDown(MouseEventArgs e)
         {
             var h = hits.At(e.Location);
+            if (h != null && h.OnPress && e.Button == MouseButtons.Left) { pressed = null; h.Invoke(); Kick(); return; }
             pressed = h == null ? null : h.Id;
             if (!anim.Enabled) Render();
         }
@@ -491,7 +491,7 @@ namespace Nibble.UI
         string HeroStatus()
         {
             if (!Mouse.Found) return "Plug in the receiver";
-            if (!Mouse.Online) return Mouse.Percent >= 0 ? "Asleep · " + Ago(Mouse.SyncedAt).ToLowerInvariant() : "Move mouse to wake";
+            if (!Mouse.Online) return Mouse.Percent >= 0 ? "Asleep Â· " + Ago(Mouse.SyncedAt).ToLowerInvariant() : "Move mouse to wake";
             return Mouse.StatusText;
         }
 

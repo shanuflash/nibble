@@ -13,7 +13,7 @@ namespace Nibble.UI
         public Color Platter, PlatterRimTop, PlatterRimBottom;
         public Color Control, ControlHover, ControlPress;
         public Color RimTop, RimBottom;          // panel specular edge
-        public Color Track, SwitchOff, SegTrack, SegThumb, Separator;
+        public Color Track, SwitchOff, SegTrack, SegThumb, SegShadow, Separator;
         public Color Green, Red, Blue, Orange;
         public Color Fallback;                   // backdrop when the screen can't be captured
 
@@ -56,9 +56,10 @@ namespace Nibble.UI
                 t.RimTop = Color.FromArgb(120, 255, 255, 255);
                 t.RimBottom = Color.FromArgb(26, 255, 255, 255);
                 t.Track = Color.FromArgb(34, 255, 255, 255);
-                t.SwitchOff = Color.FromArgb(40, 255, 255, 255);
+                t.SwitchOff = Color.FromArgb(72, 255, 255, 255);
                 t.SegTrack = Color.FromArgb(24, 255, 255, 255);
-                t.SegThumb = Color.FromArgb(60, 255, 255, 255);
+                t.SegThumb = Color.FromArgb(100, 255, 255, 255);
+                t.SegShadow = Color.FromArgb(70, 0, 0, 0);
                 t.Separator = Color.FromArgb(22, 255, 255, 255);
                 t.Green = Hex(0x30D158); t.Red = Hex(0xFF453A); t.Blue = Hex(0x0A84FF); t.Orange = Hex(0xFF9F0A);
                 t.Fallback = Hex(0x2A2A30);
@@ -78,9 +79,10 @@ namespace Nibble.UI
                 t.RimTop = Color.FromArgb(230, 255, 255, 255);
                 t.RimBottom = Color.FromArgb(70, 255, 255, 255);
                 t.Track = Color.FromArgb(22, 0, 0, 0);
-                t.SwitchOff = Color.FromArgb(26, 0, 0, 0);
+                t.SwitchOff = Color.FromArgb(46, 0, 0, 0);
                 t.SegTrack = Color.FromArgb(16, 0, 0, 0);
                 t.SegThumb = Color.FromArgb(255, 255, 255, 255);
+                t.SegShadow = Color.FromArgb(26, 0, 0, 0);
                 t.Separator = Color.FromArgb(18, 0, 0, 0);
                 t.Green = Hex(0x34C759); t.Red = Hex(0xFF3B30); t.Blue = Hex(0x007AFF); t.Orange = Hex(0xFF9500);
                 t.Fallback = Hex(0xE8E8EE);

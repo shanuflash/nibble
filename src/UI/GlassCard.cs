@@ -178,6 +178,7 @@ namespace Nibble.UI
             if (closing) more = true;   // Step may have just dismissed the card
 
             Render();
+            if (!C.SpringsSettled) more = true;   // this frame may have given a spring a new target
             if (!more) ticker.Stop();
         }
 
@@ -248,6 +249,7 @@ namespace Nibble.UI
         {
             if (e.Button != MouseButtons.Left) return;
             var h = C.Hits.At(e.Location);
+            if (h != null && h.OnPress) { C.Pressed = null; h.Invoke(); Render(); Kick(); return; }
             C.Pressed = h == null ? null : h.Id;
             if (h != null && BeginDrag(h.Id, e.X - card.X)) { dragging = true; Capture = true; }
             else if (h == null && IsDragZone(e.X - card.X, e.Y - card.Y))
@@ -279,6 +281,7 @@ namespace Nibble.UI
             string p = C.Pressed;
             C.Pressed = null;
             if (e.Button == MouseButtons.Left && h != null && h.Id == p) h.Invoke();
+            Render();   // hands springs their new targets now, so the first animation frame already moves
             Kick();
         }
 

@@ -67,6 +67,19 @@ namespace Nibble.UI
             return more;
         }
 
+        public bool SpringsSettled
+        {
+            get
+            {
+                foreach (var k in targets.Keys)
+                {
+                    float v;
+                    if (springs.TryGetValue(k, out v) && v != targets[k]) return false;
+                }
+                return true;
+            }
+        }
+
         public void ResetSprings() { springs.Clear(); targets.Clear(); }
 
         // ---------- colour ----------
@@ -140,12 +153,14 @@ namespace Nibble.UI
             using (var pen = new Pen(Av(Th.Separator), Math.Max(1f, F(0.8f)))) G.DrawLine(pen, p.X + F(18), p.Y + dy, p.Right - F(18), p.Y + dy);
         }
 
-        // Title and subtitle of row i (height rh) inside platter p.
-        public void RowLabel(RectangleF p, int i, float rh, string title, string sub)
+        // Title and subtitle of row i (height rh) inside platter p, `width` logical units wide.
+        public void RowLabel(RectangleF p, int i, float rh, string title, string sub) { RowLabel(p, i, rh, title, sub, 330); }
+
+        public void RowLabel(RectangleF p, int i, float rh, string title, string sub, float width)
         {
             var pf = PlatterFlat();
-            Text(title, Row, Th.Label, pf, new RectangleF(p.X + F(18), p.Y + rh * i + rh / 2 - F(19), F(300), F(20)), TextAlign.Left);
-            Text(sub, Sub, Th.Secondary, pf, new RectangleF(p.X + F(18), p.Y + rh * i + rh / 2 + F(1), F(330), F(18)), TextAlign.Left);
+            Text(title, Row, Th.Label, pf, new RectangleF(p.X + F(18), p.Y + rh * i + rh / 2 - F(19), F(width), F(20)), TextAlign.Left);
+            Text(sub, Sub, Th.Secondary, pf, new RectangleF(p.X + F(18), p.Y + rh * i + rh / 2 + F(1), F(width), F(18)), TextAlign.Left);
         }
 
         // A control's rect at the right end of row i.
@@ -156,21 +171,24 @@ namespace Nibble.UI
 
         // ---------- controls ----------
 
-        public void Switch(RectangleF r, bool on, string id, Action toggle)
+        public void Switch(RectangleF r, bool on, string id, Action toggle) { Switch(r, on, id, toggle, RectangleF.Inflate(r, F(6), F(6))); }
+
+        void Switch(RectangleF r, bool on, string id, Action toggle, RectangleF hit)
         {
             float pos = Spring("sw:" + id, on ? 1 : 0);
             Draw.FillRound(G, Av(Draw.Lerp(Th.SwitchOff, Th.Green, pos)), r, r.Height / 2);
-            float kw = F(Pressed == id ? 38 : 34), kh = r.Height - F(4);
+            float kw = F(34), kh = r.Height - F(4);
             var knob = new RectangleF(r.X + F(2) + pos * (r.Width - F(4) - kw), r.Y + F(2), kw, kh);
             Draw.FillRound(G, Av(Color.FromArgb(45, 0, 0, 0)), new RectangleF(knob.X, knob.Y + F(1.5f), kw, kh), kh / 2);
             Draw.FillRound(G, Av(Color.White), knob, kh / 2);
-            Hit(id, RectangleF.Inflate(r, F(6), F(6)), toggle);
+            if (Interactive) Hits.Add(id, hit, toggle, true);
         }
 
+        // The whole row toggles, and the subtitle can run up to the switch.
         public void SwitchRow(RectangleF p, int i, float rh, string title, string sub, bool on, string id, Action toggle)
         {
-            RowLabel(p, i, rh, title, sub);
-            Switch(RowControl(p, i, rh, 56, 30, 18), on, id, toggle);
+            RowLabel(p, i, rh, title, sub, p.Width / U - 18 - 56 - 18 - 20);
+            Switch(RowControl(p, i, rh, 56, 30, 18), on, id, toggle, new RectangleF(p.X, p.Y + rh * i, p.Width, rh));
         }
 
         public void Segmented(RectangleF r, string[] items, int selected, string id, Action<int> pick)
@@ -181,7 +199,7 @@ namespace Nibble.UI
             var thumb = new RectangleF(r.X + pos * iw + F(2), r.Y + F(2), iw - F(4), r.Height - F(4));
             if (selected >= 0)
             {
-                if (!Th.Dark) Draw.FillRound(G, Av(Color.FromArgb(26, 0, 0, 0)), new RectangleF(thumb.X, thumb.Y + F(1), thumb.Width, thumb.Height), thumb.Height / 2);
+                Draw.FillRound(G, Av(Th.SegShadow), new RectangleF(thumb.X, thumb.Y + F(1), thumb.Width, thumb.Height), thumb.Height / 2);
                 Draw.FillRound(G, Av(Th.SegThumb), thumb, thumb.Height / 2);
                 Draw.Rim(G, thumb, thumb.Height / 2, Av(Th.RimTop), Av(Th.RimBottom), Math.Max(1f, F(0.8f)));
             }

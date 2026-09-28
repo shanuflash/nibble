@@ -12,6 +12,7 @@ namespace Nibble.UI
             public string Id;
             public RectangleF Bounds;
             public Action Invoke;
+            public bool OnPress;   // fires on mouse down instead of on release, like switches
         }
 
         readonly List<Target> targets = new List<Target>();
@@ -21,9 +22,11 @@ namespace Nibble.UI
 
         public void Clear() { targets.Clear(); }
 
-        public void Add(string id, RectangleF r, Action invoke)
+        public void Add(string id, RectangleF r, Action invoke) { Add(id, r, invoke, false); }
+
+        public void Add(string id, RectangleF r, Action invoke, bool onPress)
         {
-            targets.Add(new Target { Id = id, Bounds = new RectangleF(r.X + Offset.X, r.Y + Offset.Y, r.Width, r.Height), Invoke = invoke });
+            targets.Add(new Target { Id = id, Bounds = new RectangleF(r.X + Offset.X, r.Y + Offset.Y, r.Width, r.Height), Invoke = invoke, OnPress = onPress });
         }
 
         // The topmost target under p, or null.

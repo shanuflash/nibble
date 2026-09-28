@@ -41,6 +41,7 @@ namespace Nibble
         readonly Queue<Func<bool>> jobs = new Queue<Func<bool>>();
         bool jobRunning;
         int polling;
+        int edits;   // bumped by every Change, so a read that started before one can't undo it
         volatile bool stopped;
         System.Windows.Forms.Timer poll;
 
@@ -111,6 +112,7 @@ namespace Nibble
             if (Interlocked.CompareExchange(ref polling, 1, 0) != 0) return;
             Busy = true;
             RaiseChanged();
+            int seen = edits;
             ThreadPool.QueueUserWorkItem(delegate
             {
                 var sw = Stopwatch.StartNew();
@@ -119,11 +121,11 @@ namespace Nibble
                 // Keep the spinner up long enough to read as feedback.
                 int rest = 550 - (int)sw.ElapsedMilliseconds;
                 if (rest > 0) Thread.Sleep(rest);
-                Post(delegate { polling = 0; Busy = false; Apply(r ?? new MouseStatus()); });
+                Post(delegate { polling = 0; Busy = false; Apply(r ?? new MouseStatus(), seen == edits); });
             });
         }
 
-        void Apply(MouseStatus r)
+        void Apply(MouseStatus r, bool settingsCurrent)
         {
             if (stopped) return;
             Found = r.Found;
@@ -132,7 +134,7 @@ namespace Nibble
             {
                 Wired = r.Wired;
                 SetBattery(r.Percent, r.Charging);
-                if (r.Settings != null && !Saving) { Settings = r.Settings; TrackDpi(true); }   // don't clobber an edit in flight
+                if (r.Settings != null && !Saving && settingsCurrent) { Settings = r.Settings; TrackDpi(true); }   // don't clobber an edit
                 SyncedAt = DateTime.Now;
             }
             Publish();
@@ -192,6 +194,7 @@ namespace Nibble
             var s = Settings.Clone();
             edit(s);
             Settings = s;
+            edits++;
             Enqueue(() => Device.Write(s, group));
         }
 
