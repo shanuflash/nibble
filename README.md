@@ -46,9 +46,9 @@ Measured on Windows 11, as shown in Task Manager:
 |---|---|---|
 | Idle in the tray | 0.3 MB | 0% |
 | Flyout open | 4 MB | < 1% |
-| Settings open | 16 MB | < 1% |
+| Settings open | ~10 MB | < 1% |
 
-CPU peaks briefly at ~4% while a panel animates open. Panels free their memory as soon as they close, so Nibble drops back to 0.3 MB.
+The General page briefly reaches 16 MB while it draws the tray icon previews. CPU peaks at ~4% while a panel animates open. Panels free their memory as soon as they close, so Nibble drops back to 0.3 MB.
 
 ## Coming up
 
