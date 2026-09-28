@@ -175,6 +175,7 @@ namespace Nibble.UI
 
             if (Step(now)) more = true;
             if (C.StepSprings()) more = true;
+            if (closing) more = true;   // Step may have just dismissed the card
 
             Render();
             if (!more) ticker.Stop();
