@@ -29,7 +29,7 @@ Battery and settings for the Royal Kludge M3, in your Windows tray.
 
 </details>
 
-Nibble replaces RK's web driver. It keeps the battery level in your tray and lets you change the mouse's settings without opening a browser. It's a single 150 KB exe that uses about 1 MB of memory when idle.
+A tray app that replaces RK's web driver, in a single 167 KB exe.
 
 ## Features
 
@@ -39,6 +39,18 @@ Nibble replaces RK's web driver. It keeps the battery level in your tray and let
 - Alerts at 20% and when fully charged, which don't interrupt games
 - Firmware check against RK's latest version
 - Light and dark mode
+
+## Lightweight
+
+Measured on Windows 11, as shown in Task Manager:
+
+| | Memory | CPU |
+|---|---|---|
+| Idle in the tray | 0.3 MB | 0% |
+| Flyout open | 4 MB | |
+| Settings open | 16 MB | |
+
+Panels free their memory as soon as they close, so Nibble drops back to 0.3 MB.
 
 ## Install
 
