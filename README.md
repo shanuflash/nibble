@@ -82,7 +82,22 @@ All of this was worked out from drive.rkgaming.com's JavaScript and checked agai
 
 ## Privacy
 
-Nibble talks to the mouse over USB and makes two network requests, both only when you open the page that shows the result:
+Nibble will not transfer any information to other networked systems unless you ask it to. It talks to the mouse over USB and makes two network requests, both only when you open the page that shows the result:
 
-- Settings → Device fetches RK's firmware manifest.
-- Settings → General asks GitHub for Nibble's latest release.
+- Settings → Device fetches RK's firmware manifest from drive.rkgaming.com.
+- Settings → General asks GitHub for Nibble's latest release ([GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)).
+
+Neither request sends anything about you or your mouse.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). *(Application pending: releases are unsigned until it's approved.)*
+
+- Committers and reviewers: [shanuflash](https://github.com/shanuflash)
+- Approvers: [shanuflash](https://github.com/shanuflash)
+
+Only builds made from this repository by the Build workflow on GitHub Actions are signed, and each signing request is approved by hand.
+
+## License
+
+[MIT](LICENSE)
