@@ -228,8 +228,13 @@ namespace Nibble
                     }
                     try { ok &= job(); } catch { ok = false; }
                 }
+                // A new polling rate makes the link re-sync, so the first read can come back empty.
                 MouseSettings fresh = null;
-                try { fresh = Device.ReadSettings(); } catch { }
+                for (int i = 0; i < 5 && fresh == null; i++)
+                {
+                    if (i > 0) Thread.Sleep(150);
+                    try { fresh = Device.ReadSettings(); } catch { }
+                }
                 Post(delegate
                 {
                     lock (jobs) if (jobs.Count > 0 || jobRunning) return;   // newer edits still in flight
