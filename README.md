@@ -1,6 +1,6 @@
 # Nibble
 
-Nibble is a small Windows tray app for the Royal Kludge M3 mouse. It keeps the battery level next to the clock, warns you before it runs out, and lets you change DPI, polling rate, sensor and power settings without opening RK's web driver. Everything goes straight to the mouse over USB, from a single 167 KB exe.
+Nibble is a small Windows tray app for the Royal Kludge M3 mouse. It keeps the battery level next to the clock, warns you before it runs out, and lets you change DPI, polling rate, sensor and power settings without opening RK's web driver. Everything goes straight to the mouse over USB, from a single 216 KB exe.
 
 <p align="center">
   <img src="docs/screenshots/settings-general.png" width="760" alt="Nibble settings">
