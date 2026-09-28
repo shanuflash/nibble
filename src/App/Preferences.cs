@@ -78,8 +78,8 @@ namespace Nibble
         static void Write(RegistryKey k, string name, int value) { k.SetValue(name, value, RegistryValueKind.DWord); }
     }
 
-    // Launch at login: a value under HKCU\...\Run, plus its entry under Explorer's StartupApproved key.
-    // Windows skips Run values without an "enabled" approval, and Task Manager's toggle lives there too.
+    // Launch at login: a value under HKCU\...\Run, plus its StartupApproved entry, which is where
+    // Task Manager's Startup apps toggle lives. Writing both keeps the two switches in agreement.
     static class AutoStart
     {
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -112,12 +112,6 @@ namespace Nibble
                 }
                 catch { }
             }
-        }
-
-        // Older builds wrote the Run value without an approval, so Windows never launched them.
-        public static void Repair()
-        {
-            if (Registered() && Approval() == Missing) Enabled = true;
         }
 
         const int Missing = 0, On = 1, Disabled = 2;

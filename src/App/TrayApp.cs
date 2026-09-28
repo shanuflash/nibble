@@ -49,7 +49,6 @@ namespace Nibble
             UpdateIcon();
             tray.Visible = true;
 
-            Nibble.AutoStart.Repair();
             After(3000, delegate { Shell.PromoteTrayIcon(Application.ExecutablePath); });
             SystemEvents.PowerModeChanged += OnPower;
             SystemEvents.UserPreferenceChanged += OnSystemPrefs;
